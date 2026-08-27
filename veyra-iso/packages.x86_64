@@ -11,7 +11,7 @@ exfatprogs
 f2fs-tools
 gptfdisk
 intel-ucode
-linux
+linux-cachyos
 linux-firmware
 lvm2
 mkinitcpio

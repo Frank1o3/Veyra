@@ -17,7 +17,8 @@ cargo build --release
 
 echo "=== [2/4] Setting Up Build Staging Workspace ==="
 # Clear old configurations safely
-sudo rm -rf "${STAGING_DIR}"
+
+trap 'sudo rm -rf "${STAGING_DIR}"' EXIT
 mkdir -p "${STAGING_DIR}" "${OUT_DIR}"
 
 # Copy the fresh profile structure to the clean throwaway workspace
