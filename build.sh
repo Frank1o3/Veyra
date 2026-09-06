@@ -26,7 +26,7 @@ cp -r "${ISO_PROFILE_DIR}/." "${STAGING_DIR}/"
 
 echo "=== [3/4] Injecting Compiled Bootstrapper Binary ==="
 # Move compiled binary directly into your staged system paths
-cp "${BOOTSTRAPPER_DIR}/target/release/bootstrapper" "${STAGING_DIR}/airootfs/usr/local/bin/veyra-installer"
+cp "${BOOTSTRAPPER_DIR}/target/release/bootstrapper" "${ISO_PROFILE_DIR}/airootfs/usr/local/bin/veyra-installer"
 
 echo "=== [4/4] Generating Distribution Installation ISO ==="
 cd "${STAGING_DIR}"

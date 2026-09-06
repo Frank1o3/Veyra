@@ -5,7 +5,8 @@ fi
 
 # Hand execution over to your Rust bootstrapper on TTY1
 if [ "$(tty)" = "/dev/tty1" ]; then
-    clear
-    # exec prevents dropping to a root shell if the user quits the binary
-    exec /usr/local/bin/veyra-installer
+    echo "this is from .zlogin, launching at $(date)" >> /tmp/zlogin.log
+    stty sane
+    /usr/local/bin/veyra-installer 2>>/tmp/veyra-installer.log
+    echo "veyra-installer exited with code $?" >> /tmp/zlogin.log
 fi

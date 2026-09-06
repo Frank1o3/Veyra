@@ -8,6 +8,7 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::hardware::CpuVendor;
 use crate::hardware::HardwareInfo;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -42,10 +43,9 @@ pub enum NvidiaDriverChoice {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HardwareProfile {
+    pub cpu_vendor: CpuVendor,
     pub igpu: Option<GpuVendor>,
     pub dgpus: Vec<GpuVendor>,
-    /// Only meaningful when an NVIDIA dGPU is present. Left unset until
-    /// the user (or a generation-based heuristic, added later) chooses.
     pub nvidia_driver_choice: Option<NvidiaDriverChoice>,
 }
 
@@ -75,6 +75,7 @@ impl HardwareProfile {
         };
 
         HardwareProfile {
+            cpu_vendor: info.cpu_vendor,
             igpu,
             dgpus,
             nvidia_driver_choice,
@@ -115,6 +116,17 @@ impl HardwareProfile {
             }
             GpuVendor::Nvidia => vec![], // NVIDIA iGPU doesn't practically exist
             GpuVendor::Other => vec![],
+        }
+    }
+
+    /// Microcode package implied by detected CPU vendor. Empty for
+    /// `CpuVendor::Other` -- installing the wrong vendor's ucode package
+    /// is harmless but pointless, so we simply don't.
+    pub fn microcode_packages(&self) -> Vec<&'static str> {
+        match self.cpu_vendor {
+            CpuVendor::Intel => vec!["intel-ucode"],
+            CpuVendor::Amd => vec!["amd-ucode"],
+            CpuVendor::Other => vec![],
         }
     }
 }

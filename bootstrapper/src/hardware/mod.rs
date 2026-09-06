@@ -5,6 +5,7 @@
 //! class `0x03xxxx` covers VGA/3D/display controllers, which is how we
 //! find iGPUs and dGPUs without hardcoding device IDs.
 
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 use thiserror::Error;
@@ -41,7 +42,7 @@ pub struct HardwareInfo {
     pub gpus: Vec<DetectedGpu>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CpuVendor {
     Intel,
     Amd,
