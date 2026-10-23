@@ -2,9 +2,9 @@
 # shellcheck disable=SC2034
 
 iso_name="veyra"
-iso_label="ARCH_$(date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y%m)"
-iso_publisher="Arch Linux <https://archlinux.org>"
-iso_application="Arch Linux Live/Rescue DVD"
+iso_label="VEYRA_$(date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y%m)"
+iso_publisher="Veyra OS"
+iso_application="Veyra OS Installer"
 iso_version="$(date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y.%m.%d)"
 install_dir="arch"
 buildmodes=('iso')
@@ -19,5 +19,8 @@ file_permissions=(
   ["/root/.automated_script.sh"]="0:0:755"
   ["/root/.gnupg"]="0:0:700"
   ["/usr/local/bin/choose-mirror"]="0:0:755"
-  ["/usr/local/bin/veyra-installer"]="0:0:755"
+  ["/usr/local/bin/veyra-installer.sh"]="0:0:755"
+  ["/usr/local/lib/veyra/hardware.sh"]="0:0:644"
+  ["/etc/pacman.conf"]="0:0:644"
+  ["/root/.zlogin"]="0:0:644"
 )
