@@ -85,7 +85,19 @@ read -r -s -p 'Repeat password: ' PASSWORD_CONFIRM; printf '\n'
 [[ -n "$PASSWORD" && "$PASSWORD" == "$PASSWORD_CONFIRM" ]] || { fail 'passwords are empty or do not match'; exit 1; }
 unset PASSWORD_CONFIRM
 
-BASE_PACKAGES=(base linux-cachyos linux-firmware cachyos-keyring cachyos-mirrorlist btrfs-progs networkmanager sudo git nano zsh)
+BASE_PACKAGES=(
+    base linux-cachyos linux-firmware cachyos-keyring cachyos-mirrorlist
+    btrfs-progs networkmanager sudo git nano fish cachyos-fish-config
+    hyprland hyprlock hypridle hyprshutdown hyprpolkitagent quickshell sddm
+    kitty awww
+    pipewire pipewire-pulse wireplumber
+    xdg-desktop-portal-hyprland xdg-desktop-portal-gtk
+    gnome-keyring nm-connection-editor network-manager-applet
+    brightnessctl playerctl thunar gvfs tumbler file-roller
+    adw-gtk-theme papirus-icon-theme adwaita-cursors
+    ttf-jetbrains-mono-nerd ttf-nerd-fonts-symbols ttf-nerd-fonts-symbols-common
+    qt6ct qt6-5compat
+)
 PACKAGES=("${BASE_PACKAGES[@]}" "${INSTALL_PACKAGES[@]}")
 printf '\nPackages to install:\n  %s\n' "${PACKAGES[*]}"
 printf '\nTarget: %s\nHostname: %s\nUser: %s\n' "$DISK" "$HOSTNAME" "$USERNAME"
@@ -140,12 +152,17 @@ printf 'LANG=%s\n' "$LOCALE" > "$MOUNT/etc/locale.conf"
 printf 'KEYMAP=%s\n' "$KEYMAP" > "$MOUNT/etc/vconsole.conf"
 ln -sf "/usr/share/zoneinfo/$TIMEZONE" "$MOUNT/etc/localtime"
 arch-chroot "$MOUNT" locale-gen
-arch-chroot "$MOUNT" useradd -m -G wheel -s /bin/zsh "$USERNAME"
+arch-chroot "$MOUNT" useradd -m -G wheel -s /usr/bin/fish "$USERNAME"
 printf '%s:%s\n' "$USERNAME" "$PASSWORD" | arch-chroot "$MOUNT" chpasswd
 unset PASSWORD
 printf '%%wheel ALL=(ALL:ALL) ALL\n' > "$MOUNT/etc/sudoers.d/10-wheel"
 chmod 0440 "$MOUNT/etc/sudoers.d/10-wheel"
 arch-chroot "$MOUNT" systemctl enable NetworkManager
+install -Dm755 /usr/local/lib/veyra/install-dotfiles.sh \
+    "$MOUNT/usr/local/lib/veyra/install-dotfiles.sh"
+mkdir -p "$MOUNT/usr/share/veyra/dotfiles"
+cp -a /usr/share/veyra/dotfiles/. "$MOUNT/usr/share/veyra/dotfiles/"
+arch-chroot "$MOUNT" /usr/local/lib/veyra/install-dotfiles.sh "$USERNAME"
 arch-chroot "$MOUNT" bootctl --esp-path=/boot --no-variables install
 ROOT_UUID=$(blkid -s UUID -o value "$ROOT")
 mkdir -p "$MOUNT/boot/loader/entries"

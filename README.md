@@ -32,7 +32,9 @@ The installer creates a GPT disk with a 1 GiB EFI System Partition and a Btrfs
 root partition. It creates `@`, `@home`, `@snapshots`, and `@var_log`
 subvolumes, installs the CachyOS kernel and firmware, and configures systemd as
 the installed system's init and service manager, with systemd-boot for UEFI
-boot. It enables NetworkManager and creates the user in the `wheel` group.
+boot. It enables NetworkManager and SDDM, installs the Hyprland/Quickshell
+desktop packages, and creates the user in the `wheel` group with Fish as the
+login shell.
 
 CPU microcode is selected from the detected vendor. `linux-firmware` is the
 firmware metapackage; it pulls in the vendor-split firmware packages, including
@@ -47,22 +49,14 @@ during installation. Connect Ethernet or configure Wi-Fi from another TTY
 before continuing. The selected disk is erased; back up any data you need.
 Installer output is shown live and appended to `/tmp/veyra-install.log`.
 
-## Desktop setup
+## Desktop configuration
 
-The [dotfiles repository](https://github.com/Frank1o3/dotfiles) is a personal
-Hyprland/Quickshell configuration. Its `setup.sh` expects `paru` and builds
-some AUR packages, so the ISO does not run it as root during OS installation.
-After first boot, install the build tools and paru, then run the setup as the
-new user:
-
-```sh
-sudo pacman -S --needed base-devel git
-git clone https://aur.archlinux.org/paru.git
-cd paru && makepkg -si
-cd ..
-git clone https://github.com/Frank1o3/dotfiles.git
-cd dotfiles && ./setup.sh
-```
+The ISO bundles the Hyprland, Quickshell, Kitty, Fish, Wallust, SDDM theme,
+and wallpaper configuration from the [dotfiles repository](https://github.com/Frank1o3/dotfiles).
+The installer copies these into the new user's home and enables SDDM. Neovim
+configuration and packages are not included. The AUR-only Wallust executable
+and Catppuccin cursor package are not built during installation; without
+Wallust, wallpaper changes still work but do not regenerate the color palette.
 
 ## Layout
 
@@ -71,3 +65,5 @@ cd dotfiles && ./setup.sh
 - `veyra-iso/airootfs/usr/local/bin/veyra-installer.sh` is the guided installer.
 - `veyra-iso/airootfs/usr/local/lib/veyra/hardware.sh` detects hardware and
   selects installed-system packages.
+- `veyra-iso/airootfs/usr/local/lib/veyra/install-dotfiles.sh` installs the
+  bundled desktop configuration into the target user account.

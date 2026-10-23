@@ -1,0 +1,6 @@
+[Unit]
+Description=Sync SDDM theme colors/wallpaper from Quickshell rice
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/sddm-theme-sync.py {USERNAME}
