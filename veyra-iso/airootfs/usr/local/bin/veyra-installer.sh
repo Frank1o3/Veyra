@@ -131,18 +131,39 @@ BASE_PACKAGES=(
     limine limine-mkinitcpio-hook limine-snapper-sync snapper efibootmgr cava inter-font
 )
 PACKAGES=("${BASE_PACKAGES[@]}" "${INSTALL_PACKAGES[@]}")
+PACKAGES=("${PACKAGES[@]/#linux-cachyos/${KERNEL_PREFIX}linux-cachyos}")
 printf '\nPackages to install:\n  %s\n' "${PACKAGES[*]}"
 printf '\nTarget: %s\nHostname: %s\nUser: %s\n' "$DISK" "$HOSTNAME" "$USERNAME"
 printf '\nPreparing package keys and checking repository access...\n'
+
 systemctl start pacman-init.service
-pacman -Sy --noconfirm
-if [[ "$KERNEL_REPOSITORY" == cachyos-v3 ]]; then
-    printf 'CPU supports x86-64-v3; selecting CachyOS v3 packages.\n'
-    sed -i 's#/etc/pacman.d/cachyos-mirrorlist#/etc/pacman.d/cachyos-v3-mirrorlist#' /etc/pacman.conf
-    INSTALL_PACKAGES+=(cachyos-v3-mirrorlist)
+
+printf '\nRanking Arch mirrors (this can take a minute)...\n'
+cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bak
+if reflector --latest 20 --protocol https --sort rate \
+        --connection-timeout 5 --download-timeout 5 \
+        --save /etc/pacman.d/mirrorlist; then
+    printf 'Mirrorlist updated.\n'
 else
-    printf 'CPU does not support x86-64-v3; using standard CachyOS packages.\n'
+    printf 'Mirror ranking failed; keeping the default mirrorlist.\n'
+    cp /etc/pacman.d/mirrorlist.bak /etc/pacman.d/mirrorlist
 fi
+
+USE_V3_KERNEL=0
+if [[ "$KERNEL_REPOSITORY" == cachyos-v3 ]]; then
+    ask 'This CPU supports x86-64-v3. Install the optimized v3 kernel? [y/N]: '
+    if [[ "${REPLY,,}" == y* ]]; then
+        printf '\nWARNING: the v3 kernel will NOT boot on CPUs lacking\n'
+        printf 'x86-64-v3 (AVX2, BMI1/2, FMA, MOVBE, LZCNT, F16C, ...).\n'
+        printf 'If this disk is ever moved to an older machine, it will not start.\n\n'
+        sleep 8
+        ask 'Are you sure you want the v3 kernel? [y/N]: '
+        [[ "${REPLY,,}" == y* ]] && USE_V3_KERNEL=1
+    fi
+fi
+KERNEL_PREFIX=""
+(( USE_V3_KERNEL )) || KERNEL_PREFIX="cachyos/"
+
 read -r -p "Type ERASE to partition and format $DISK: " CONFIRM
 [[ "$CONFIRM" == ERASE ]] || { fail 'confirmation did not match; no disk changes made'; exit 1; }
 
@@ -191,7 +212,9 @@ if (( IS_UEFI )); then
     mount "$BOOT_PART" "$MOUNT/boot"
 fi
 
-pacstrap -c "$MOUNT" "${PACKAGES[@]}"
+
+pacman -Syy --noconfirm
+pacstrap "$MOUNT" "${PACKAGES[@]}"
 arch-chroot "$MOUNT" pacman-key --populate archlinux cachyos
 genfstab -U "$MOUNT" > "$MOUNT/etc/fstab"
 install -Dm644 /etc/pacman.conf "$MOUNT/etc/pacman.conf"
