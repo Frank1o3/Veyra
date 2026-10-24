@@ -28,7 +28,8 @@ ask() {
 }
 
 need_root
-[[ -d /sys/firmware/efi ]] || { fail 'boot the installer in UEFI mode'; exit 1; }
+IS_UEFI=0
+[[ -d /sys/firmware/efi ]] && IS_UEFI=1
 if mountpoint -q "$MOUNT"; then
     fail "$MOUNT is already mounted; unmount it before starting the installer"
     exit 1
@@ -39,10 +40,15 @@ clear || true
 cat <<'WELCOME'
 Veyra OS installer
 ==================
-This installs a minimal CachyOS-kernel Arch system with a UEFI boot entry.
+This installs a minimal CachyOS-kernel Arch system with the Limine bootloader.
 The selected disk will be erased after the final confirmation.
 Output is mirrored to /tmp/veyra-install.log.
 WELCOME
+if (( IS_UEFI )); then
+    printf '\nDetected Firmware: UEFI (x86_64 / IA32 supported)\n'
+else
+    printf '\nDetected Firmware: Legacy BIOS\n'
+fi
 printf '\nDetected CPU: %s\n' "$CPU_VENDOR"
 printf 'Detected GPUs: %s\n' "${GPU_VENDORS[*]:-none}"
 if [[ " ${GPU_VENDORS[*]} " == *" nvidia "* ]] && (( ! NVIDIA_OPEN_SUPPORTED )); then
@@ -97,6 +103,7 @@ BASE_PACKAGES=(
     adw-gtk-theme papirus-icon-theme adwaita-cursors
     ttf-jetbrains-mono-nerd ttf-nerd-fonts-symbols ttf-nerd-fonts-symbols-common
     qt6ct qt6-5compat python rsync
+    limine limine-mkinitcpio-hook limine-snapper-sync snapper efibootmgr cava inter-font
 )
 PACKAGES=("${BASE_PACKAGES[@]}" "${INSTALL_PACKAGES[@]}")
 printf '\nPackages to install:\n  %s\n' "${PACKAGES[*]}"
@@ -115,16 +122,25 @@ for part in $(lsblk -nrpo NAME "$DISK" | tail -n +2); do
 done
 
 case "$(basename "$DISK")" in nvme*|mmcblk*) SEP=p ;; *) SEP= ;; esac
-ESP="${DISK}${SEP}1"
+BOOT_PART="${DISK}${SEP}1"
 ROOT="${DISK}${SEP}2"
 
 sgdisk --zap-all "$DISK"
-sgdisk --new=1:0:+1GiB --typecode=1:ef00 --change-name=1:VeyraEFI "$DISK"
+if (( IS_UEFI )); then
+    sgdisk --new=1:0:+1GiB --typecode=1:ef00 --change-name=1:VeyraEFI "$DISK"
+else
+    # 32MiB BIOS boot partition for Limine stage 2 on GPT
+    sgdisk --new=1:0:+32MiB --typecode=1:ef02 --change-name=1:VeyraBIOS "$DISK"
+fi
 sgdisk --new=2:0:0 --typecode=2:8300 --change-name=2:VeyraRoot "$DISK"
 blockdev --rereadpt "$DISK"
 udevadm settle
-mkfs.fat -F32 -n VEYRA_EFI "$ESP"
+
+if (( IS_UEFI )); then
+    mkfs.fat -F32 -n VEYRA_EFI "$BOOT_PART"
+fi
 mkfs.btrfs -f -L VEYRA_ROOT "$ROOT"
+
 mkdir -p "$MOUNT"
 MOUNTED=1
 mount "$ROOT" "$MOUNT"
@@ -138,7 +154,10 @@ mkdir -p "$MOUNT"/{boot,home,.snapshots,var/log}
 mount -o noatime,compress=zstd:3,space_cache=v2,subvol=@home "$ROOT" "$MOUNT/home"
 mount -o noatime,compress=zstd:3,space_cache=v2,subvol=@snapshots "$ROOT" "$MOUNT/.snapshots"
 mount -o noatime,compress=zstd:3,space_cache=v2,subvol=@var_log "$ROOT" "$MOUNT/var/log"
-mount "$ESP" "$MOUNT/boot"
+
+if (( IS_UEFI )); then
+    mount "$BOOT_PART" "$MOUNT/boot"
+fi
 
 pacstrap -c "$MOUNT" "${PACKAGES[@]}"
 arch-chroot "$MOUNT" pacman-key --populate archlinux cachyos
@@ -177,20 +196,44 @@ if [[ -x /usr/local/bin/rivet ]]; then
     arch-chroot "$MOUNT" rivet init --system 2>/dev/null || true
     arch-chroot "$MOUNT" sudo -u "$USERNAME" rivet init 2>/dev/null || true
 fi
-arch-chroot "$MOUNT" bootctl --esp-path=/boot --no-variables install
+printf '\nConfiguring Limine bootloader...\n'
 ROOT_UUID=$(blkid -s UUID -o value "$ROOT")
-mkdir -p "$MOUNT/boot/loader/entries"
-cat > "$MOUNT/boot/loader/loader.conf" <<'LOADER'
-default veyra.conf
-timeout 3
-editor no
-LOADER
-cat > "$MOUNT/boot/loader/entries/veyra.conf" <<ENTRY
-title Veyra OS
-linux /vmlinuz-linux-cachyos
-initrd /initramfs-linux-cachyos.img
-options root=UUID=$ROOT_UUID rootflags=subvol=@ rw
-ENTRY
+
+install -d "$MOUNT/boot/limine" "$MOUNT/boot/EFI/BOOT"
+
+cat > "$MOUNT/boot/limine/limine.conf" <<EOF
+timeout: 3
+graphics: yes
+interface_branding: Veyra OS
+
+/Veyra OS (Linux CachyOS)
+    protocol: linux
+    kernel_path: boot():/vmlinuz-linux-cachyos
+    module_path: boot():/initramfs-linux-cachyos.img
+    cmdline: root=UUID=$ROOT_UUID rootflags=subvol=@ rw quiet splash
+
+/Veyra OS (Fallback Initramfs)
+    protocol: linux
+    kernel_path: boot():/vmlinuz-linux-cachyos
+    module_path: boot():/initramfs-linux-cachyos-fallback.img
+    cmdline: root=UUID=$ROOT_UUID rootflags=subvol=@ rw
+EOF
+
+cp "$MOUNT/boot/limine/limine.conf" "$MOUNT/boot/limine.conf"
+
+if (( IS_UEFI )); then
+    # Deploy UEFI binaries (both x86_64 and 32-bit IA32 for mixed-mode)
+    cp /usr/share/limine/BOOTX64.EFI "$MOUNT/boot/EFI/BOOT/BOOTX64.EFI"
+    cp /usr/share/limine/BOOTIA32.EFI "$MOUNT/boot/EFI/BOOT/BOOTIA32.EFI"
+    arch-chroot "$MOUNT" efibootmgr --create --disk "$DISK" --part 1 --label "Veyra OS (Limine)" --loader "\\EFI\\BOOT\\BOOTX64.EFI" 2>/dev/null || true
+else
+    # Deploy Legacy BIOS Limine
+    cp /usr/share/limine/limine-bios.sys "$MOUNT/boot/limine/"
+    cp /usr/share/limine/limine-bios.sys "$MOUNT/boot/"
+    limine bios-install "$DISK" 1
+fi
+
+arch-chroot "$MOUNT" systemctl enable limine-snapper-sync.service 2>/dev/null || true
 
 umount -R "$MOUNT"
 MOUNTED=0
