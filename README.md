@@ -62,6 +62,6 @@ but do not regenerate the color palette.
 
 - `build.sh` builds the ISO with Archiso.
 - `veyra-iso/` contains the Archiso profile and live-root shell scripts.
-- `veyra-iso/airootfs/usr/local/bin/veyra-installer.sh` is the guided installer.
+- `veyra-iso/airootfs/usr/local/bin/veyra-installer.py` is the guided installer.
 - `veyra-iso/airootfs/usr/local/lib/veyra/hardware.sh` detects hardware and
   selects installed-system packages.

@@ -6,5 +6,5 @@ fi
 # Start the guided shell installer automatically on the first console.
 if [ "$(tty)" = "/dev/tty1" ]; then
     stty sane
-    /usr/local/bin/veyra-installer.sh
+    /usr/local/bin/veyra-installer.py
 fi

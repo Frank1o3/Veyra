@@ -16,3 +16,5 @@ efibootmgr
 mtools
 pv
 reflector
+python
+python-rich
