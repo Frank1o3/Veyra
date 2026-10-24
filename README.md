@@ -51,12 +51,12 @@ Installer output is shown live and appended to `/tmp/veyra-install.log`.
 
 ## Desktop configuration
 
-The ISO bundles the Hyprland, Quickshell, Kitty, Fish, Wallust, SDDM theme,
-and wallpaper configuration from the [dotfiles repository](https://github.com/Frank1o3/dotfiles).
-The installer copies these into the new user's home and enables SDDM. Neovim
-configuration and packages are not included. The AUR-only Wallust executable
-and Catppuccin cursor package are not built during installation; without
-Wallust, wallpaper changes still work but do not regenerate the color palette.
+The installer installs the Hyprland, Quickshell, Kitty, Fish, Wallust, SDDM theme,
+and wallpaper configuration directly from the [dotfiles repository](https://github.com/Frank1o3/dotfiles)
+using `setup.sh --config-only`. The installer copies these into the new user's home
+and enables SDDM. The AUR-only Wallust executable and Catppuccin cursor package
+are not built during installation; without Wallust, wallpaper changes still work
+but do not regenerate the color palette.
 
 ## Layout
 
@@ -65,5 +65,3 @@ Wallust, wallpaper changes still work but do not regenerate the color palette.
 - `veyra-iso/airootfs/usr/local/bin/veyra-installer.sh` is the guided installer.
 - `veyra-iso/airootfs/usr/local/lib/veyra/hardware.sh` detects hardware and
   selects installed-system packages.
-- `veyra-iso/airootfs/usr/local/lib/veyra/install-dotfiles.sh` installs the
-  bundled desktop configuration into the target user account.

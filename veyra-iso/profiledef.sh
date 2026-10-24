@@ -20,6 +20,7 @@ file_permissions=(
   ["/root/.gnupg"]="0:0:700"
   ["/usr/local/bin/choose-mirror"]="0:0:755"
   ["/usr/local/bin/veyra-installer.sh"]="0:0:755"
+  ["/usr/local/bin/rivet"]="0:0:755"
   ["/usr/local/lib/veyra/hardware.sh"]="0:0:644"
   ["/etc/pacman.conf"]="0:0:644"
   ["/root/.zlogin"]="0:0:644"

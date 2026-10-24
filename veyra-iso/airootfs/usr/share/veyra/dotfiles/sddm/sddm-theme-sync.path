@@ -1,9 +1,0 @@
-[Unit]
-Description=Watch for wallpaper changes to resync SDDM theme
-
-[Path]
-PathChanged={HOME}/wallpapers/wallpaper.jpg
-Unit=sddm-theme-sync.service
-
-[Install]
-WantedBy=multi-user.target

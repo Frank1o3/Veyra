@@ -96,7 +96,7 @@ BASE_PACKAGES=(
     brightnessctl playerctl thunar gvfs tumbler file-roller
     adw-gtk-theme papirus-icon-theme adwaita-cursors
     ttf-jetbrains-mono-nerd ttf-nerd-fonts-symbols ttf-nerd-fonts-symbols-common
-    qt6ct qt6-5compat
+    qt6ct qt6-5compat python rsync
 )
 PACKAGES=("${BASE_PACKAGES[@]}" "${INSTALL_PACKAGES[@]}")
 printf '\nPackages to install:\n  %s\n' "${PACKAGES[*]}"
@@ -157,12 +157,26 @@ printf '%s:%s\n' "$USERNAME" "$PASSWORD" | arch-chroot "$MOUNT" chpasswd
 unset PASSWORD
 printf '%%wheel ALL=(ALL:ALL) ALL\n' > "$MOUNT/etc/sudoers.d/10-wheel"
 chmod 0440 "$MOUNT/etc/sudoers.d/10-wheel"
-arch-chroot "$MOUNT" systemctl enable NetworkManager
-install -Dm755 /usr/local/lib/veyra/install-dotfiles.sh \
-    "$MOUNT/usr/local/lib/veyra/install-dotfiles.sh"
-mkdir -p "$MOUNT/usr/share/veyra/dotfiles"
-cp -a /usr/share/veyra/dotfiles/. "$MOUNT/usr/share/veyra/dotfiles/"
-arch-chroot "$MOUNT" /usr/local/lib/veyra/install-dotfiles.sh "$USERNAME"
+arch-chroot "$MOUNT" systemctl enable NetworkManager sddm
+arch-chroot "$MOUNT" systemctl set-default graphical.target
+
+printf '\nInstalling desktop configuration from dotfiles repository...\n'
+arch-chroot "$MOUNT" bash -c "
+    git clone --depth 1 https://github.com/Frank1o3/dotfiles.git /tmp/dotfiles
+    /tmp/dotfiles/setup.sh --config-only --user '$USERNAME'
+    rm -rf /tmp/dotfiles
+"
+
+if [[ -x /usr/local/bin/rivet ]]; then
+    printf '\nInstalling Rivet package manager...\n'
+    install -Dm755 /usr/local/bin/rivet "$MOUNT/usr/local/bin/rivet"
+    if [[ -d /usr/share/rivet ]]; then
+        mkdir -p "$MOUNT/usr/share/rivet"
+        cp -a /usr/share/rivet/. "$MOUNT/usr/share/rivet/"
+    fi
+    arch-chroot "$MOUNT" rivet init --system 2>/dev/null || true
+    arch-chroot "$MOUNT" sudo -u "$USERNAME" rivet init 2>/dev/null || true
+fi
 arch-chroot "$MOUNT" bootctl --esp-path=/boot --no-variables install
 ROOT_UUID=$(blkid -s UUID -o value "$ROOT")
 mkdir -p "$MOUNT/boot/loader/entries"
