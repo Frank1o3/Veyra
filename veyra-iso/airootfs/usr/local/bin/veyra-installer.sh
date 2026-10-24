@@ -139,7 +139,7 @@ pacman -Sy --noconfirm
 if [[ "$KERNEL_REPOSITORY" == cachyos-v3 ]]; then
     printf 'CPU supports x86-64-v3; selecting CachyOS v3 packages.\n'
     sed -i 's#/etc/pacman.d/cachyos-mirrorlist#/etc/pacman.d/cachyos-v3-mirrorlist#' /etc/pacman.conf
-    pacman -Sy --noconfirm cachyos-v3-mirrorlist
+    INSTALL_PACKAGES+=(cachyos-v3-mirrorlist)
 else
     printf 'CPU does not support x86-64-v3; using standard CachyOS packages.\n'
 fi

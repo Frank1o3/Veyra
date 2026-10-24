@@ -5,17 +5,27 @@ veyra_detect_hardware() {
     GPU_VENDORS=()
     INSTALL_PACKAGES=()
     NVIDIA_OPEN_SUPPORTED=0
+    
+    local ldso_out cpu_flags flag
     KERNEL_REPOSITORY=cachyos
 
-    local cpu_flags
-    cpu_flags=$(sed -n 's/^flags[[:space:]]*:[[:space:]]*//p' /proc/cpuinfo | head -n 1)
-    if [[ " $cpu_flags " == *" avx "* && " $cpu_flags " == *" avx2 "* && \
-          " $cpu_flags " == *" bmi1 "* && " $cpu_flags " == *" bmi2 "* && \
-          " $cpu_flags " == *" fma "* && " $cpu_flags " == *" lzcnt "* && \
-          " $cpu_flags " == *" movbe "* && " $cpu_flags " == *" popcnt "* && \
-          " $cpu_flags " == *" sse4_1 "* && " $cpu_flags " == *" sse4_2 "* && \
-          " $cpu_flags " == *" ssse3 "* ]]; then
+    # Preferred: ask glibc's loader. Captured to a variable (not piped to
+    # grep -q) so pipefail/SIGPIPE can't cause a false negative.
+    ldso_out=$(/lib/ld-linux-x86-64.so.2 --help 2>/dev/null || true)
+    if [[ "$ldso_out" == *"x86-64-v3 (supported, searched)"* ]]; then
         KERNEL_REPOSITORY=cachyos-v3
+    elif [[ -z "$ldso_out" ]]; then
+        # Fallback: manual flag check using the names /proc/cpuinfo really uses
+        # (abm = lzcnt, pni = sse3).
+        cpu_flags=$(sed -n 's/^flags[[:space:]]*:[[:space:]]*//p' /proc/cpuinfo | head -n 1)
+        KERNEL_REPOSITORY=cachyos-v3
+        for flag in avx avx2 bmi1 bmi2 f16c fma abm movbe xsave \
+                    cx16 lahf_lm popcnt pni ssse3 sse4_1 sse4_2; do
+            if [[ " $cpu_flags " != *" $flag "* ]]; then
+                KERNEL_REPOSITORY=cachyos
+                break
+            fi
+        done
     fi
 
     if grep -q 'GenuineIntel' /proc/cpuinfo; then
