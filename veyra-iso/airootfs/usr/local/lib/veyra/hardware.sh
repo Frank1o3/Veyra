@@ -5,6 +5,18 @@ veyra_detect_hardware() {
     GPU_VENDORS=()
     INSTALL_PACKAGES=()
     NVIDIA_OPEN_SUPPORTED=0
+    KERNEL_REPOSITORY=cachyos
+
+    local cpu_flags
+    cpu_flags=$(sed -n 's/^flags[[:space:]]*:[[:space:]]*//p' /proc/cpuinfo | head -n 1)
+    if [[ " $cpu_flags " == *" avx "* && " $cpu_flags " == *" avx2 "* && \
+          " $cpu_flags " == *" bmi1 "* && " $cpu_flags " == *" bmi2 "* && \
+          " $cpu_flags " == *" fma "* && " $cpu_flags " == *" lzcnt "* && \
+          " $cpu_flags " == *" movbe "* && " $cpu_flags " == *" popcnt "* && \
+          " $cpu_flags " == *" sse4_1 "* && " $cpu_flags " == *" sse4_2 "* && \
+          " $cpu_flags " == *" ssse3 "* ]]; then
+        KERNEL_REPOSITORY=cachyos-v3
+    fi
 
     if grep -q 'GenuineIntel' /proc/cpuinfo; then
         CPU_VENDOR=intel

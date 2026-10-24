@@ -111,6 +111,13 @@ printf '\nTarget: %s\nHostname: %s\nUser: %s\n' "$DISK" "$HOSTNAME" "$USERNAME"
 printf '\nPreparing package keys and checking repository access...\n'
 systemctl start pacman-init.service
 pacman -Sy --noconfirm
+if [[ "$KERNEL_REPOSITORY" == cachyos-v3 ]]; then
+    printf 'CPU supports x86-64-v3; selecting CachyOS v3 packages.\n'
+    sed -i 's#/etc/pacman.d/cachyos-mirrorlist#/etc/pacman.d/cachyos-v3-mirrorlist#' /etc/pacman.conf
+    pacman -Sy --noconfirm cachyos-v3-mirrorlist
+else
+    printf 'CPU does not support x86-64-v3; using standard CachyOS packages.\n'
+fi
 read -r -p "Type ERASE to partition and format $DISK: " CONFIRM
 [[ "$CONFIRM" == ERASE ]] || { fail 'confirmation did not match; no disk changes made'; exit 1; }
 

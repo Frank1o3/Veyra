@@ -2,6 +2,7 @@ arch-install-scripts
 base
 btrfs-progs
 cachyos-mirrorlist
+cachyos-v3-mirrorlist
 cachyos-keyring
 dosfstools
 gptfdisk

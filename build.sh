@@ -12,5 +12,5 @@ command -v mkarchiso >/dev/null || {
 
 mkdir -p "$OUT_DIR"
 cd "$REPO_DIR"
-mkarchiso -r -v -o "$OUT_DIR" "$PROFILE_DIR"
+sudo mkarchiso -r -v -o "$OUT_DIR" "$PROFILE_DIR"
 echo "ISO build complete: ${OUT_DIR}"
