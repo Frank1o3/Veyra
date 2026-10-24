@@ -27,6 +27,31 @@ ask() {
     REPLY=$value
 }
 
+have_network() {
+    ping -c1 -W3 archlinux.org >/dev/null 2>&1 \
+        || curl -fsI --max-time 5 https://archlinux.org >/dev/null 2>&1
+}
+
+ensure_network() {
+    systemctl start NetworkManager.service 2>/dev/null || true
+    rfkill unblock wifi 2>/dev/null || true
+    sleep 2
+    until have_network; do
+        printf '\nNo internet connection detected.\n'
+        printf '  1) Open network setup (nmtui)\n'
+        printf '  2) Retry connection check\n'
+        printf '  3) Quit installer\n'
+        ask 'Choose [1]: '
+        case "${REPLY:-1}" in
+            1) nmtui </dev/tty >/dev/tty 2>&1 || true; sleep 3 ;;
+            2) ;;
+            3) exit 1 ;;
+            *) printf 'Invalid choice.\n' ;;
+        esac
+    done
+    printf 'Network connection OK.\n'
+}
+
 need_root
 IS_UEFI=0
 [[ -d /sys/firmware/efi ]] && IS_UEFI=1
@@ -54,7 +79,7 @@ printf 'Detected GPUs: %s\n' "${GPU_VENDORS[*]:-none}"
 if [[ " ${GPU_VENDORS[*]} " == *" nvidia "* ]] && (( ! NVIDIA_OPEN_SUPPORTED )); then
     printf 'NVIDIA driver: pre-Turing hardware found; leaving it on the kernel nouveau driver.\n'
 fi
-
+ensure_network
 mapfile -t DISKS < <(lsblk -dnpo NAME,SIZE,MODEL,TYPE | awk '$(NF) == "disk" { $NF=""; sub(/[[:space:]]+$/, ""); print }')
 if ((${#DISKS[@]} == 0)); then
     fail "no install disks were found"
