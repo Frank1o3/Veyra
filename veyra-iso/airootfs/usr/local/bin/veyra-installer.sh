@@ -136,7 +136,11 @@ printf '\nPackages to install:\n  %s\n' "${PACKAGES[*]}"
 printf '\nTarget: %s\nHostname: %s\nUser: %s\n' "$DISK" "$HOSTNAME" "$USERNAME"
 printf '\nPreparing package keys and checking repository access...\n'
 
-systemctl start pacman-init.service
+systemctl start pacman-init.service || true
+if [[ ! -s /etc/pacman.d/gnupg/pubring.gpg && ! -s /etc/pacman.d/gnupg/pubring.kbx ]]; then
+    pacman-key --init
+fi
+pacman-key --populate archlinux cachyos
 
 printf '\nRanking Arch mirrors (this can take a minute)...\n'
 cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bak
