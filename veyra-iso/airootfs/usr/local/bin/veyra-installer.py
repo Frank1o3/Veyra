@@ -40,7 +40,7 @@ BASE_PACKAGES = [
     "ttf-jetbrains-mono-nerd", "ttf-nerd-fonts-symbols", "ttf-nerd-fonts-symbols-common",
     "qt6ct", "qt6-5compat", "python", "rsync",
     "limine", "limine-mkinitcpio-hook", "limine-snapper-sync", "snapper", "efibootmgr",
-    "cava", "inter-font",
+    "cava", "inter-font", "qt5-graphicaleffects", "qt5-quickcontrols2"
 ]
 
 # XKB layout name (what Hyprland/SDDM use) -> console keymap name (what vconsole uses).
