@@ -10,6 +10,7 @@ from .config import (
     SERVICES_ENABLE,
     SERVICES_GLOBAL,
     SWAP_PRIORITY,
+    SUPPLEMENTARY_GROUPS
 )
 from .shell import capture, chroot, put, run, target
 from .ui import step
@@ -57,7 +58,7 @@ def configure_system(cfg: dict) -> None:
     tz.symlink_to(f"/usr/share/zoneinfo/{cfg['timezone']}")
 
     chroot("locale-gen")
-    chroot("useradd", "-m", "-G", "wheel", "-s", "/usr/bin/fish", cfg["username"])
+    chroot("useradd", "-m", "-G", SUPPLEMENTARY_GROUPS, "-s", "/usr/bin/fish", cfg["username"])
     chroot("chpasswd", input_text=f"{cfg['username']}:{cfg['password']}\n")
     put("/etc/sudoers.d/10-wheel", "%wheel ALL=(ALL:ALL) ALL\n", 0o440)
 

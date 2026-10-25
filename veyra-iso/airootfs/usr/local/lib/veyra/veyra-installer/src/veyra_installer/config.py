@@ -1,3 +1,17 @@
+SUPPLEMENTARY_GROUPS = [
+    "sys",
+    "network",
+    "docker",
+    "nopasswdlogin",
+    "rfkill",
+    "users",
+    "video",
+    "storage",
+    "lp",
+    "input",
+    "audio",
+    "wheel",
+]
 
 LOG_FILE = "/tmp/veyra-install.log"
 MOUNT = "/mnt"
@@ -5,7 +19,7 @@ DOTFILES_URL = "https://github.com/Frank1o3/dotfiles.git"
 BTRFS_OPTS = "noatime,compress=zstd:3,space_cache=v2"
 
 BASE_PACKAGES = [
-    "base", "linux-cachyos", "linux-firmware", "cachyos-keyring", "cachyos-mirrorlist",
+    "base", "linux-cachyos", "linux-cachyos-lts", "linux-firmware", "cachyos-keyring", "cachyos-mirrorlist",
     "btrfs-progs", "networkmanager", "sudo", "git", "nano", "fish", "cachyos-fish-config",
     "hyprland", "hyprlock", "hypridle", "hyprshutdown", "hyprpolkitagent", "quickshell",
     "kitty", "awww","ripgrep", "unzip","strace", "7zip", "unrar", "udisks2", "sddm",
