@@ -58,7 +58,14 @@ def configure_system(cfg: dict) -> None:
     tz.symlink_to(f"/usr/share/zoneinfo/{cfg['timezone']}")
 
     chroot("locale-gen")
-    chroot("useradd", "-m", "-G", ",".join(SUPPLEMENTARY_GROUPS), "-s", "/usr/bin/fish", cfg["username"])
+    chroot(
+        "useradd",
+        "-m",
+        "-U",
+        "-G", ",".join(SUPPLEMENTARY_GROUPS),
+        "-s", "/usr/bin/fish",
+        cfg["username"],
+    )
     chroot("chpasswd", input_text=f"{cfg['username']}:{cfg['password']}\n")
     put("/etc/sudoers.d/10-wheel", "%wheel ALL=(ALL:ALL) ALL\n", 0o440)
 
