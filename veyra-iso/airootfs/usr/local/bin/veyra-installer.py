@@ -526,13 +526,13 @@ interface_branding: Veyra OS
     protocol: linux
     kernel_path: boot():/vmlinuz-linux-cachyos
     module_path: boot():/initramfs-linux-cachyos.img
-    cmdline: root=UUID={uuid} rootflags=subvol=@ rw quiet splash
+    cmdline: root=UUID={uuid} rootflags=subvol=@ rw loglevel=6
 
 /Veyra OS (Fallback Initramfs)
     protocol: linux
     kernel_path: boot():/vmlinuz-linux-cachyos
     module_path: boot():/initramfs-linux-cachyos-fallback.img
-    cmdline: root=UUID={uuid} rootflags=subvol=@ rw
+    cmdline: root=UUID={uuid} rootflags=subvol=@ rw loglevel=6
 """
     (boot / "limine/limine.conf").write_text(conf)
     (boot / "limine.conf").write_text(conf)
