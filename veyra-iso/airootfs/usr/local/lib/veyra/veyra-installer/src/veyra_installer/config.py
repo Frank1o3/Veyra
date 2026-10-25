@@ -8,7 +8,7 @@ BASE_PACKAGES = [
     "base", "linux-cachyos", "linux-firmware", "cachyos-keyring", "cachyos-mirrorlist",
     "btrfs-progs", "networkmanager", "sudo", "git", "nano", "fish", "cachyos-fish-config",
     "hyprland", "hyprlock", "hypridle", "hyprshutdown", "hyprpolkitagent", "quickshell",
-    "kitty", "awww","ripgrep", "unzip","strace", "7zip" "unrar", "udisks2", "sddm",
+    "kitty", "awww","ripgrep", "unzip","strace", "7zip", "unrar", "udisks2", "sddm",
     "pipewire", "pipewire-pulse", "wireplumber", "zip", "zstd", "xdg-utils",
     "xdg-desktop-portal-hyprland", "xdg-desktop-portal-gtk", "xdg-user-dirs",
     "gnome-keyring", "nm-connection-editor", "network-manager-applet", "man-db",
@@ -18,7 +18,7 @@ BASE_PACKAGES = [
     "qt6ct", "qt6-5compat", "rsync", "cachyos-rate-mirrors", "wl-clipboard", "grim", "slurp",
     "limine", "limine-mkinitcpio-hook", "limine-snapper-sync", "snapper", "efibootmgr",
     "cava", "inter-font", "qt5-graphicaleffects", "qt5-quickcontrols2", "bluez", "bluez-utils",
-    "llvm", "cmake", "clang", "ninja","base-devel", "rustup", "mason", "neovim", "tree-sitter-cli",
+    "llvm", "cmake", "clang", "ninja","base-devel", "rustup", "neovim", "tree-sitter-cli",
     "nodejs", "npm", "python", "gdb", "lldb", "mason", "clang-tools-extra", "uv", "ty", "ruff",
     "paru", "ccache", "valgrind", "curl", "jq", "openssh", "shellcheck", "shfmt", "sqlite",
 ]
