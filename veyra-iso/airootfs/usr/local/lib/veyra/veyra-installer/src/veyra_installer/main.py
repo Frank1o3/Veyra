@@ -15,18 +15,18 @@ from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
 
-import bootloader
-import disk
-import memory
-import network
-import packages
-import postinstall
-import snapshots
-import system
-from config import DEFAULT_HOSTNAME, LOG_FILE, MOUNT
-from hardware import detect_hardware, swap_size_mib
-from shell import InstallerError, is_mounted, run
-from ui import (
+from . import bootloader
+from . import disk
+from . import memory
+from . import network
+from . import packages
+from . import postinstall
+from . import snapshots
+from . import system
+from .config import DEFAULT_HOSTNAME, LOG_FILE, MOUNT
+from .hardware import detect_hardware, swap_size_mib
+from .shell import InstallerError, is_mounted, run
+from .ui import (
     ask_keyboard,
     ask_locale,
     ask_password,

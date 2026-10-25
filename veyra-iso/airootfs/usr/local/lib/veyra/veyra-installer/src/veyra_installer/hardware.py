@@ -5,8 +5,8 @@ import math
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from config import SWAP_ROUND_GIB, V3_FLAGS
-from shell import capture
+from .config import SWAP_ROUND_GIB, V3_FLAGS
+from .shell import capture
 
 
 @dataclass

@@ -6,8 +6,8 @@ import time
 
 from rich.prompt import Prompt
 
-from shell import InstallerError, run
-from ui import console
+from .shell import InstallerError, run
+from .ui import console
 
 
 def have_network() -> bool:

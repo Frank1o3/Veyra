@@ -8,13 +8,13 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 
-from config import (
+from .config import (
     DEFAULT_LOCALE,
     DEFAULT_TIMEZONE,
     LOG_FILE,
     XKB_TO_CONSOLE,
 )
-from hardware import Hardware
+from .hardware import Hardware
 
 console = Console()
 

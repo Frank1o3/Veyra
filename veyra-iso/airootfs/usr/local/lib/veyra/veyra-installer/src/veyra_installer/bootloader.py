@@ -9,15 +9,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from config import (
+from .config import (
     KERNEL_CMDLINE,
     LIMINE_BASE_CONF,
     LIMINE_DEFAULT,
     MOUNT,
 )
-from disk import Layout
-from shell import chroot, put, run
-from ui import console, step
+from .disk import Layout
+from .shell import chroot, put, run
+from .ui import console, step
 
 
 def install_bootloader(disk: str, layout: Layout) -> None:

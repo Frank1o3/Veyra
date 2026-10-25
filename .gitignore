@@ -3,3 +3,4 @@ out/
 .build/
 work/
 .venv/
+__pycache__/

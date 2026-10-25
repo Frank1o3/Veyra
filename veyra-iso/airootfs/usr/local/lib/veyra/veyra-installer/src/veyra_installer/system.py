@@ -3,17 +3,16 @@ from __future__ import annotations
 
 import re
 import shlex
-from pathlib import Path
 
-from config import (
+from .config import (
     DOTFILES_URL,
     MOUNT,
     SERVICES_ENABLE,
     SERVICES_GLOBAL,
     SWAP_PRIORITY,
 )
-from shell import capture, chroot, put, run, target
-from ui import step
+from .shell import capture, chroot, put, run, target
+from .ui import step
 
 
 def configure_system(cfg: dict) -> None:

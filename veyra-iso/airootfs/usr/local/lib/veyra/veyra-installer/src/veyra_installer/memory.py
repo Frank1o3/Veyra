@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import re
 
-from config import ZRAM_CONF, ZRAM_SYSCTL
-from shell import InstallerError, put, target
-from ui import step
+from .config import ZRAM_CONF, ZRAM_SYSCTL
+from .shell import InstallerError, put, target
+from .ui import step
 
 
 def configure_zram() -> None:

@@ -17,9 +17,9 @@ from pathlib import Path
 from rich.prompt import Prompt
 from rich.table import Table
 
-from config import BTRFS_OPTS, ESP_SIZE_MIB, MIN_ROOT_GIB, MOUNT, SUBVOLUMES
-from shell import InstallerError, capture, run
-from ui import console, step
+from .config import BTRFS_OPTS, ESP_SIZE_MIB, MIN_ROOT_GIB, MOUNT, SUBVOLUMES
+from .shell import InstallerError, capture, run
+from .ui import console, step
 
 
 @dataclass

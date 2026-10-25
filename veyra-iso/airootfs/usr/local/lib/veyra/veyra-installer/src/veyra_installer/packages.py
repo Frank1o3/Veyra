@@ -3,10 +3,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from config import BASE_PACKAGES, MOUNT
-from hardware import Hardware
-from shell import run
-from ui import console, step
+from .config import BASE_PACKAGES, MOUNT
+from .hardware import Hardware
+from .shell import run
+from .ui import console, step
 
 
 def build_package_list(hw: Hardware, use_v3_kernel: bool) -> list[str]:

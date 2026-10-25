@@ -1,9 +1,9 @@
 """Snapper configuration and automatic disk cleanup/sanitization."""
 from __future__ import annotations
 
-from config import CLEANUP_FILES, SNAPPER_CONF
-from shell import chroot, put
-from ui import step
+from .config import CLEANUP_FILES, SNAPPER_CONF
+from .shell import chroot, put
+from .ui import step
 
 
 def configure_snapshots() -> None:

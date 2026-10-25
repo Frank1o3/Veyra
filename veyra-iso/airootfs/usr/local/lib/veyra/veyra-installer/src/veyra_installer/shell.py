@@ -5,7 +5,7 @@ import shlex
 import subprocess
 from pathlib import Path
 
-from config import LOG_FILE, MOUNT
+from .config import LOG_FILE, MOUNT
 
 
 class InstallerError(Exception):

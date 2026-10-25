@@ -4,9 +4,9 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from config import AUR_PACKAGES, MOUNT
-from shell import chroot, put, run, target
-from ui import step
+from .config import AUR_PACKAGES, MOUNT
+from .shell import chroot, put, run, target
+from .ui import step
 
 FIRSTBOOT_SCRIPT_PATH = "/usr/local/lib/veyra/firstboot-aur.sh"
 FIRSTBOOT_MARKER = "/var/lib/veyra/firstboot-pending"
