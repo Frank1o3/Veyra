@@ -23,4 +23,5 @@ file_permissions=(
   ["/usr/local/bin/rivet"]="0:0:755"
   ["/etc/pacman.conf"]="0:0:644"
   ["/root/.zlogin"]="0:0:644"
+  ["/usr/local/lib/veyra/firstboot-aur.sh"]="0:0:755"
 )

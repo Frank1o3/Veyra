@@ -30,8 +30,8 @@ BTRFS_OPTS = "noatime,compress=zstd:3,space_cache=v2"
 BASE_PACKAGES = [
     "base", "linux-cachyos", "linux-firmware", "cachyos-keyring", "cachyos-mirrorlist",
     "btrfs-progs", "networkmanager", "sudo", "git", "nano", "fish", "cachyos-fish-config",
-    "hyprland", "hyprlock", "hypridle", "hyprshutdown", "hyprpolkitagent", "quickshell", "sddm",
-    "kitty", "awww","ripgrep", "unzip","strace", "7zip" "unrar", "udisks2",
+    "hyprland", "hyprlock", "hypridle", "hyprshutdown", "hyprpolkitagent", "quickshell",
+    "kitty", "awww","ripgrep", "unzip","strace", "7zip" "unrar", "udisks2", "sddm",
     "pipewire", "pipewire-pulse", "wireplumber", "zip", "zstd", "xdg-utils",
     "xdg-desktop-portal-hyprland", "xdg-desktop-portal-gtk", "xdg-user-dirs",
     "gnome-keyring", "nm-connection-editor", "network-manager-applet", "man-db",
@@ -60,6 +60,34 @@ V3_FLAGS = (
     "cx16", "lahf_lm", "popcnt", "pni", "ssse3", "sse4_1", "sse4_2",
 )
 
+FIRSTBOOT_SCRIPT = "/usr/local/lib/veyra/firstboot-aur.sh"
+
+FIRSTBOOT_UNIT = """[Unit]
+Description=Veyra first-boot AUR package install
+ConditionPathExists=/var/lib/veyra/firstboot-pending
+Wants=network-online.target
+After=network-online.target NetworkManager-wait-online.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/veyra/firstboot-aur.sh
+TimeoutStartSec=infinity
+
+[Install]
+WantedBy=multi-user.target
+"""
+
+def install_firstboot(cfg: dict) -> None:
+    step("First-boot AUR service")
+    m = Path(MOUNT)
+    (m / "usr/local/lib/veyra").mkdir(parents=True, exist_ok=True)
+    (m / "var/lib/veyra").mkdir(parents=True, exist_ok=True)
+
+    run(["install", "-Dm755", FIRSTBOOT_SCRIPT, f"{MOUNT}{FIRSTBOOT_SCRIPT}"])
+    (m / "etc/systemd/system/veyra-firstboot.service").write_text(FIRSTBOOT_UNIT)
+    (m / "var/lib/veyra/firstboot-pending").write_text(cfg["username"] + "\n")
+
+    chroot("systemctl", "enable", "veyra-firstboot.service")
 
 class InstallerError(Exception):
     pass
@@ -595,6 +623,7 @@ def main() -> int:
                    console_keymap=console_keymap, password=password)
         configure_system(cfg)
         install_dotfiles(cfg)
+        install_firstboot(cfg)
         install_rivet(cfg)
         install_bootloader(disk, root, uefi)
 
