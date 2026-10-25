@@ -2,7 +2,6 @@ SUPPLEMENTARY_GROUPS = [
     "sys",
     "network",
     "docker",
-    "nopasswdlogin",
     "rfkill",
     "users",
     "video",

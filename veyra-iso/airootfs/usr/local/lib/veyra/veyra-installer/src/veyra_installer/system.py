@@ -58,6 +58,10 @@ def configure_system(cfg: dict) -> None:
     tz.symlink_to(f"/usr/share/zoneinfo/{cfg['timezone']}")
 
     chroot("locale-gen")
+    
+    for group in SUPPLEMENTARY_GROUPS:
+        chroot("groupadd", "--force", "--system", group)
+
     chroot(
         "useradd",
         "-m",
