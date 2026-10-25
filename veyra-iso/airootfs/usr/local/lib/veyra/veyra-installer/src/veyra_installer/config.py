@@ -9,7 +9,7 @@ BASE_PACKAGES = [
     "btrfs-progs", "networkmanager", "sudo", "git", "nano", "fish", "cachyos-fish-config",
     "hyprland", "hyprlock", "hypridle", "hyprshutdown", "hyprpolkitagent", "quickshell",
     "kitty", "awww","ripgrep", "unzip","strace", "7zip", "unrar", "udisks2", "sddm",
-    "pipewire", "pipewire-pulse", "wireplumber", "zip", "zstd", "xdg-utils",
+    "pipewire", "pipewire-pulse", "wireplumber", "zip", "zstd", "xdg-utils", "fish",
     "xdg-desktop-portal-hyprland", "xdg-desktop-portal-gtk", "xdg-user-dirs",
     "gnome-keyring", "nm-connection-editor", "network-manager-applet", "man-db",
     "brightnessctl", "playerctl", "thunar", "gvfs", "tumbler", "file-roller","pavucontrol",
