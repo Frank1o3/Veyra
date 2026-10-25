@@ -585,7 +585,7 @@ def main() -> int:
         _, root = partition_and_mount(disk, uefi)
 
         step("Installing packages (this takes a while)")
-        run(["pacstrap", "-c", MOUNT, *packages])
+        run(["pacstrap", MOUNT, *packages])
 
         cfg = dict(username=username, hostname=hostname, locale=locale,
                    timezone=timezone, xkb_layout=xkb_layout,
