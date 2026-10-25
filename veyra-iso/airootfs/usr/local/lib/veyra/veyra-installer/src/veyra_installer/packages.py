@@ -33,9 +33,7 @@ def prepare_keys_and_mirrors(hw: Hardware) -> None:
     console.print("Ranking Arch mirrors (this can take a minute)...")
     rc = run(
         [
-            "reflector", "--latest", "20", "--protocol", "https", "--sort", "rate",
-            "--connection-timeout", "5", "--download-timeout", "5",
-            "--save", str(mirrorlist),
+            "cachyos-rate-mirrors"
         ],
         check=False,
     )
