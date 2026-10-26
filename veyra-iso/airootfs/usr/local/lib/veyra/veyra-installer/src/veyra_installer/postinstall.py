@@ -15,6 +15,7 @@ FIRSTBOOT_MARKER = "/var/lib/veyra/firstboot-pending"
 # the user and grants a temporary NOPASSWD rule that is always removed.
 # Deletes itself only after success; on failure it retries next boot.
 FIRSTBOOT_SCRIPT = r"""#!/usr/bin/env bash
+#!/usr/bin/env bash
 set -uo pipefail
 
 MARKER=/var/lib/veyra/firstboot-pending
@@ -26,6 +27,19 @@ PACKAGES=(@PACKAGES@)
 cleanup_sudo() { rm -f "$SUDOERS"; }
 trap cleanup_sudo EXIT
 
+run_user() { runuser -u "$USER_NAME" -- env HOME="$USER_HOME" "$@"; }
+
+# --- Config that setup.sh skips in --config-only mode (no network needed) ---
+echo "Setting up default applications..."
+run_user xdg-mime default thunar.desktop inode/directory application/x-directory || true
+run_user xdg-mime default code.desktop text/plain text/x-shellscript text/x-python || true
+
+echo "Configuring Git..."
+run_user git config --global core.editor "code --wait" || true
+run_user git config --global merge.tool vscode || true
+run_user git config --global mergetool.vscode.cmd 'code --wait "$MERGED"' || true
+
+# --- Network part ---
 for _ in $(seq 1 36); do
     ping -c1 -W2 aur.archlinux.org >/dev/null 2>&1 && break
     sleep 5
@@ -35,9 +49,6 @@ ping -c1 -W2 aur.archlinux.org >/dev/null 2>&1 || { echo "No network; will retry
 echo "$USER_NAME ALL=(ALL) NOPASSWD: ALL" > "$SUDOERS"
 chmod 440 "$SUDOERS"
 
-run_user() { runuser -u "$USER_NAME" -- env HOME="$USER_HOME" "$@"; }
-
-# wallust-git builds with cargo; rustup has no toolchain until one is chosen.
 run_user rustup default stable || exit 1
 run_user paru -Syu --needed --noconfirm --skipreview "${PACKAGES[@]}" || exit 1
 

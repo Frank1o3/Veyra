@@ -17,25 +17,60 @@ MOUNT = "/mnt"
 DOTFILES_URL = "https://github.com/Frank1o3/dotfiles.git"
 BTRFS_OPTS = "noatime,compress=zstd:3,space_cache=v2"
 
+# Ordered from "system can't boot without it" down to "nice to have".
+# pacman still resolves dependency order inside one transaction, so this
+# order is mainly for readability and for how unrelated packages are queued.
 BASE_PACKAGES = [
-    "base", "linux-cachyos", "linux-cachyos-lts", "linux-firmware", "cachyos-keyring", "cachyos-mirrorlist",
-    "btrfs-progs", "networkmanager", "sudo", "git", "nano", "fish", "cachyos-fish-config", "qt6-wayland",
-    "hyprland", "hyprlock", "hypridle", "hyprshutdown", "hyprpolkitagent", "quickshell", "qt5-wayland",
-    "kitty", "awww","ripgrep", "unzip","strace", "7zip", "unrar", "udisks2", "sddm", "tk", "fastfetch",
-    "pipewire", "pipewire-pulse", "pipewire-alsa", "pipewire-jack", "wireplumber", "zip", "zstd",
-    "xdg-utils", "fish", "snap-pac", "wget", "eza", "fzf", "bat", "mpv", "ufw", "ufw-extras", "btop",
-    "xdg-desktop-portal-hyprland", "xdg-desktop-portal-gtk", "xdg-user-dirs","pacman-contrib", "fd",
-    "gnome-keyring", "nm-connection-editor", "network-manager-applet", "man-db", "upower", "firefox",
-    "brightnessctl", "playerctl", "thunar", "gvfs", "tumbler", "file-roller", "pavucontrol",
-    "adw-gtk-theme", "papirus-icon-theme", "adwaita-cursors", "man-pages", "noto-fonts", "gvfs-mtp",
-    "ttf-jetbrains-mono-nerd", "ttf-nerd-fonts-symbols", "ttf-nerd-fonts-symbols-common",
-    "qt6ct", "qt6-5compat", "rsync", "cachyos-rate-mirrors", "wl-clipboard", "grim", "slurp",
-    "limine", "limine-mkinitcpio-hook", "limine-snapper-sync", "snapper", "efibootmgr", "iptables",
-    "cava", "inter-font", "qt5-graphicaleffects", "qt5-quickcontrols2", "bluez", "bluez-utils",
-    "llvm", "cmake", "clang", "ninja","base-devel", "rustup", "neovim", "tree-sitter-cli", "nftables",
-    "nodejs", "npm", "python", "gdb", "lldb", "clang-tools-extra", "uv", "ty", "ruff", "loupe",
-    "paru", "ccache", "valgrind", "curl", "jq", "openssh", "shellcheck", "shfmt", "sqlite",
-    "ntfs-3g", "exfatprogs", "dosfstools", "zram-generator", "gamemode",
+    # 1. Base system, kernels, firmware, package tooling
+    "base", "linux-cachyos", "linux-cachyos-lts", "linux-firmware",
+    "cachyos-keyring", "cachyos-mirrorlist", "cachyos-rate-mirrors", "pacman-contrib",
+
+    # 2. Filesystems, bootloader, snapshots, swap
+    "btrfs-progs", "dosfstools", "ntfs-3g", "exfatprogs", "efibootmgr",
+    "limine", "limine-mkinitcpio-hook", "snapper", "snap-pac", "limine-snapper-sync",
+    "zram-generator",
+
+    # 3. Core services and system access
+    "sudo", "networkmanager", "openssh", "udisks2", "upower",
+    "bluez", "bluez-utils", "iptables", "nftables", "ufw", "ufw-extras",
+
+    # 4. Shell and command-line essentials
+    "fish", "git", "nano", "curl", "wget", "rsync",
+    "zip", "unzip", "zstd", "7zip", "unrar",
+    "jq", "ripgrep", "fd", "fzf", "eza", "bat", "btop", "fastfetch",
+    "man-db", "man-pages", "xdg-utils", "xdg-user-dirs",
+
+    # 5. Audio, portals, secrets and polkit
+    "pipewire", "pipewire-pulse", "pipewire-alsa", "pipewire-jack", "wireplumber",
+    "xdg-desktop-portal-hyprland", "xdg-desktop-portal-gtk",
+    "gnome-keyring", "hyprpolkitagent",
+
+    # 6. Login manager, compositor and desktop shell
+    "sddm", "hyprland", "hyprlock", "hypridle", "hyprshutdown", "quickshell",
+    "qt6-wayland", "qt5-wayland", "qt6ct", "qt6-5compat",
+    "qt5-graphicaleffects", "qt5-quickcontrols2",
+    "awww", "kitty", "wl-clipboard", "grim", "slurp",
+    "brightnessctl", "playerctl", "cava",
+    "nm-connection-editor", "network-manager-applet",
+
+    # 7. Fonts, icons and themes
+    "noto-fonts", "ttf-jetbrains-mono-nerd", "ttf-nerd-fonts-symbols",
+    "ttf-nerd-fonts-symbols-common", "inter-font",
+    "adw-gtk-theme", "papirus-icon-theme", "adwaita-cursors",
+
+    # 8. Desktop applications
+    "thunar", "gvfs", "gvfs-mtp", "tumbler", "file-roller",
+    "pavucontrol", "firefox", "mpv", "loupe", "tk",
+
+    # 9. Development toolchain
+    "base-devel", "paru", "python", "uv", "ty", "ruff", "rustup",
+    "clang", "llvm", "clang-tools-extra", "cmake", "ninja", "ccache",
+    "gdb", "lldb", "valgrind", "strace",
+    "nodejs", "npm", "neovim", "tree-sitter-cli",
+    "shellcheck", "shfmt", "sqlite",
+
+    # 10. Optional extras
+    "gamemode",
 ]
 
 # XKB layout name (what Hyprland/SDDM use) -> console keymap name (what vconsole uses).
@@ -172,4 +207,4 @@ CLEANUP_FILES = {
 
 # --- First-boot AUR installs (run once via paru, then the service deletes itself) ---
 # Verify names with `paru -Ss temurin`; plain `wallust` may exist in extra.
-AUR_PACKAGES = ["wallust-git", "catppuccin-cursors-mocha", "jdk-temurin"]
+AUR_PACKAGES = ["wallust-git", "catppuccin-cursors-mocha", "jdk-temurin", "rg", "gradle"]
