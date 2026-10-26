@@ -19,21 +19,23 @@ BTRFS_OPTS = "noatime,compress=zstd:3,space_cache=v2"
 
 BASE_PACKAGES = [
     "base", "linux-cachyos", "linux-cachyos-lts", "linux-firmware", "cachyos-keyring", "cachyos-mirrorlist",
-    "btrfs-progs", "networkmanager", "sudo", "git", "nano", "fish", "cachyos-fish-config",
-    "hyprland", "hyprlock", "hypridle", "hyprshutdown", "hyprpolkitagent", "quickshell",
-    "kitty", "awww","ripgrep", "unzip","strace", "7zip", "unrar", "udisks2", "sddm",
-    "pipewire", "pipewire-pulse", "wireplumber", "zip", "zstd", "xdg-utils", "fish",
-    "xdg-desktop-portal-hyprland", "xdg-desktop-portal-gtk", "xdg-user-dirs",
-    "gnome-keyring", "nm-connection-editor", "network-manager-applet", "man-db",
-    "brightnessctl", "playerctl", "thunar", "gvfs", "tumbler", "file-roller","pavucontrol",
-    "adw-gtk-theme", "papirus-icon-theme", "adwaita-cursors", "man-pages", "noto-fonts",
-    "ttf-jetbrains-mono-nerd", "ttf-nerd-fonts-symbols", "ttf-nerd-fonts-symbols-common",
-    "qt6ct", "qt6-5compat", "rsync", "cachyos-rate-mirrors", "wl-clipboard", "grim", "slurp",
-    "limine", "limine-mkinitcpio-hook", "limine-snapper-sync", "snapper", "efibootmgr",
+    "btrfs-progs", "networkmanager", "sudo", "git", "nano", "fish", "cachyos-fish-config", "qt6-wayland",
+    "hyprland", "hyprlock", "hypridle", "hyprshutdown", "hyprpolkitagent", "quickshell", "qt5-wayland",
+    "kitty", "awww","ripgrep", "unzip","strace", "7zip", "unrar", "udisks2", "sddm", "tk", "fastfetch",
+    "pipewire", "pipewire-pulse", "pipewire-alsa", "pipewire-jack", "wireplumber", "zip", "zstd",
+    "xdg-utils", "fish", "snap-pac", "wget", "eza", "fzf", "bat", "mpv", "ufw", "ufw-extras", "btop",
+    "xdg-desktop-portal-hyprland", "xdg-desktop-portal-gtk", "xdg-user-dirs","pacman-contrib", "fd",
+    "gnome-keyring", "nm-connection-editor", "network-manager-applet", "man-db", "upower", "firefox",
+    "brightnessctl", "playerctl", "thunar", "gvfs", "tumbler", "file-roller","pavucontrol", "rg",
+    "adw-gtk-theme", "papirus-icon-theme", "adwaita-cursors", "man-pages", "noto-fonts", "gvfs-mtp"
+    "ttf-jetbrains-mono-nerd", "ttf-nerd-fonts-symbols", "ttf-nerd-fonts-symbols-common", "lazy-git",
+    "qt6ct", "qt6-5compat", "rsync", "cachyos-rate-mirrors", "wl-clipboard", "grim", "slurp", "iptables",
+    "limine", "limine-mkinitcpio-hook", "limine-snapper-sync", "snapper", "efibootmgr", "wl-copy",
     "cava", "inter-font", "qt5-graphicaleffects", "qt5-quickcontrols2", "bluez", "bluez-utils",
-    "llvm", "cmake", "clang", "ninja","base-devel", "rustup", "neovim", "tree-sitter-cli",
-    "nodejs", "npm", "python", "gdb", "lldb", "zram", "clang-tools-extra", "uv", "ty", "ruff",
+    "llvm", "cmake", "clang", "ninja","base-devel", "rustup", "neovim", "tree-sitter-cli", "nftables",
+    "nodejs", "npm", "python", "gdb", "lldb", "clang-tools-extra", "uv", "ty", "ruff", "loupe",
     "paru", "ccache", "valgrind", "curl", "jq", "openssh", "shellcheck", "shfmt", "sqlite",
+    "ntfs-3g", "exfatprogs", "dosfstools", "zram-generator", "gamemode"
 ]
 
 # XKB layout name (what Hyprland/SDDM use) -> console keymap name (what vconsole uses).
