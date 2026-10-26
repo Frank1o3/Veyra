@@ -32,7 +32,7 @@ BASE_PACKAGES = [
     "limine", "limine-mkinitcpio-hook", "limine-snapper-sync", "snapper", "efibootmgr",
     "cava", "inter-font", "qt5-graphicaleffects", "qt5-quickcontrols2", "bluez", "bluez-utils",
     "llvm", "cmake", "clang", "ninja","base-devel", "rustup", "neovim", "tree-sitter-cli",
-    "nodejs", "npm", "python", "gdb", "lldb", "mason", "clang-tools-extra", "uv", "ty", "ruff",
+    "nodejs", "npm", "python", "gdb", "lldb", "zram", "clang-tools-extra", "uv", "ty", "ruff",
     "paru", "ccache", "valgrind", "curl", "jq", "openssh", "shellcheck", "shfmt", "sqlite",
 ]
 
