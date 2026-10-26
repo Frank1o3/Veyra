@@ -11,11 +11,24 @@ from .ui import step
 FIRSTBOOT_SCRIPT_PATH = "/usr/local/lib/veyra/firstboot-aur.sh"
 FIRSTBOOT_MARKER = "/var/lib/veyra/firstboot-pending"
 
-# paru refuses to run as root and calls `sudo pacman`, so the script drops to
-# the user and grants a temporary NOPASSWD rule that is always removed.
-# Deletes itself only after success; on failure it retries next boot.
+ONLINE_SCRIPT = """#!/bin/sh
+for _ in $(seq 1 12); do
+    curl -fsI --max-time 5 https://aur.archlinux.org >/dev/null 2>&1 && exit 0
+    sleep 5
+done
+exit 1
+"""
+
+DISPATCHER = """#!/bin/sh
+case "$2" in
+    up|connectivity-change|dhcp4-change) ;;
+    *) exit 0 ;;
+esac
+[ -e /var/lib/veyra/firstboot-pending ] || exit 0
+systemctl start --no-block veyra-firstboot.service
+"""
+
 FIRSTBOOT_SCRIPT = r"""#!/usr/bin/env bash
-#!/usr/bin/env bash
 set -uo pipefail
 
 MARKER=/var/lib/veyra/firstboot-pending
@@ -58,7 +71,9 @@ fi
 
 cleanup_sudo
 systemctl disable veyra-firstboot.service
-rm -f /etc/systemd/system/veyra-firstboot.service "$0" "$MARKER"
+rm -f /etc/systemd/system/veyra-firstboot.service "$0" "$MARKER" \
+    /usr/local/lib/veyra/firstboot-online.sh \
+    /etc/NetworkManager/dispatcher.d/90-veyra-firstboot
 systemctl daemon-reload
 exit 0
 """
@@ -84,6 +99,8 @@ def install_firstboot(cfg: dict) -> None:
     script = FIRSTBOOT_SCRIPT.replace("@PACKAGES@", " ".join(AUR_PACKAGES))
     put(FIRSTBOOT_SCRIPT_PATH, script, 0o755)
     put("/etc/systemd/system/veyra-firstboot.service", FIRSTBOOT_UNIT)
+    put("/usr/local/lib/veyra/firstboot-online.sh", ONLINE_SCRIPT, 0o755)
+    put("/etc/NetworkManager/dispatcher.d/90-veyra-firstboot", DISPATCHER, 0o755)
     put(FIRSTBOOT_MARKER, cfg["username"] + "\n")
     chroot("systemctl", "enable", "veyra-firstboot.service")
 
