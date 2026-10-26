@@ -5,7 +5,7 @@ MARKER=/var/lib/veyra/firstboot-pending
 USER_NAME="$(cat "$MARKER")"
 USER_HOME="$(getent passwd "$USER_NAME" | cut -d: -f6)"
 SUDOERS=/etc/sudoers.d/99-veyra-firstboot
-PACKAGES=(@PACKAGES@)
+PACKAGES=(rg wallust-git catppuccin-cursors-mocha jdk25-temurin)
 
 cleanup_sudo() { rm -f "$SUDOERS"; }
 trap cleanup_sudo EXIT
