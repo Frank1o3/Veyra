@@ -207,4 +207,4 @@ CLEANUP_FILES = {
 
 # --- First-boot AUR installs (run once via paru, then the service deletes itself) ---
 # Verify names with `paru -Ss temurin`; plain `wallust` may exist in extra.
-AUR_PACKAGES = ["wallust-git", "catppuccin-cursors-mocha", "jdk-temurin", "rg", "gradle"]
+AUR_PACKAGES = ["wallust-git", "catppuccin-cursors-mocha", "jdk-temurin"]
