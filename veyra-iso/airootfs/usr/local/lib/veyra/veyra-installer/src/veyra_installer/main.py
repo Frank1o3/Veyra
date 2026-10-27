@@ -130,6 +130,7 @@ def main() -> int:
         postinstall.install_firstboot(cfg)
         system.enable_services()
         bootloader.install_bootloader(target_disk, layout)
+        snapshots.create_initial_snapshot()
 
         run(["swapoff", layout.swap], check=False)
         run(["umount", "-R", MOUNT])

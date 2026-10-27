@@ -19,3 +19,8 @@ def configure_cleanup() -> None:
     step("Automatic cleanup")
     for path, content in CLEANUP_FILES.items():
         put(path, content)
+
+def create_initial_snapshot() -> None:
+    step("Initial snapshot")
+    chroot("snapper", "--no-dbus", "-c", "root", "create",
+           "--cleanup-algorithm", "number", "-d", "Fresh install", check=False)
