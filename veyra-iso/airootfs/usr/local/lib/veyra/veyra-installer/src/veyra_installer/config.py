@@ -59,7 +59,8 @@ BASE_PACKAGES = [
     "adw-gtk-theme", "papirus-icon-theme", "adwaita-cursors",
 
     # 8. Desktop applications
-    "thunar", "gvfs", "gvfs-mtp", "tumbler", "file-roller",
+    "thunar", "thunar-archive-plugin", "thunar-media-tags-plugin", "thunar-volman",
+    "gvfs", "gvfs-mtp", "tumbler", "file-roller", "thunar-vcs-plugin",
     "pavucontrol", "firefox", "mpv", "loupe", "tk",
 
     # 9. Development toolchain
