@@ -8,11 +8,24 @@ a disk, and install the base system.
 ## Build
 
 On an Arch Linux or CachyOS build host, install `archiso`, `git`, and the
-CachyOS repositories/package keyring required for `linux-cachyos`. Then run:
+CachyOS repositories/package keyring required for `linux-cachyos`. The build
+stages all four kernel caches by default:
 
 ```sh
 ./build.sh
 ```
+
+Choose a subset with `KERNEL_PROFILES`, a comma-separated list of `generic`,
+`v3`, `v4`, and `znver4`, if needed:
+
+```sh
+KERNEL_PROFILES=generic,v3 ./build.sh
+```
+
+The build fetches optimized package archives but does not execute them on the
+build host. Its temporary pacman config accepts the x86-64, v3, and v4 package
+architectures, so producing the v4 and znver4 caches does not require a Zen 4/5
+CPU or a special GitHub runner.
 
 The ISO is written to `out/`. Archiso's temporary `work/` directory is removed
 after a successful build.
