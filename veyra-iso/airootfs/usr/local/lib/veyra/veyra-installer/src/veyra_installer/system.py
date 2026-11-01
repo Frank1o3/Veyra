@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 import shlex
+from pathlib import Path
 
 from .config import (
     DOTFILES_URL,
@@ -12,6 +13,7 @@ from .config import (
     SWAP_PRIORITY,
     SUPPLEMENTARY_GROUPS
 )
+from . import branding
 from .shell import capture, chroot, put, run, target
 from .ui import step
 
@@ -29,8 +31,11 @@ def configure_system(cfg: dict) -> None:
     put("/etc/fstab", fstab)
 
     run(["install", "-Dm644", "/etc/pacman.conf", f"{MOUNT}/etc/pacman.conf"])
-    run(["install", "-Dm644", "/etc/pacman.d/cachyos-mirrorlist",
-         f"{MOUNT}/etc/pacman.d/cachyos-mirrorlist"])
+    for mirrorlist in Path("/etc/pacman.d").glob("cachyos*-mirrorlist"):
+        run([
+            "install", "-Dm644", str(mirrorlist),
+            f"{MOUNT}/etc/pacman.d/{mirrorlist.name}",
+        ])
     put("/etc/hostname", cfg["hostname"] + "\n")
 
     locale_gen = target("/etc/locale.gen")
@@ -43,6 +48,7 @@ def configure_system(cfg: dict) -> None:
         + "\n"
     )
     put("/etc/locale.conf", f"LANG={cfg['locale']}\n")
+    branding.set_os_release_identity()
     put("/etc/vconsole.conf", f"KEYMAP={cfg['console_keymap']}\n")
     put(
         "/etc/X11/xorg.conf.d/00-keyboard.conf",
@@ -83,6 +89,8 @@ def install_dotfiles(cfg: dict) -> None:
         f"/tmp/dotfiles/setup.sh --config-only --user {user}; "
         "rm -rf /tmp/dotfiles",
     )
+    branding.install_fastfetch_config(cfg["username"])
+    chroot("chown", "-R", f"{user}:{user}", f"/home/{cfg['username']}/.config/fastfetch")
 
     # The dotfiles hardcode kb_layout = "us"; apply the chosen layout.
     # input.lua is seed-only in sync-config.py, so updates won't undo this.

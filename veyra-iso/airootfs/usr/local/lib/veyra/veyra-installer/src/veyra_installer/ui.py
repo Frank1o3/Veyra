@@ -108,21 +108,30 @@ def ask_keyboard() -> tuple[str, str]:
         return xkb, cmap
 
 
-def ask_v3_kernel(hw: Hardware) -> bool:
-    import time
+def ask_kernel_profile(hw: Hardware) -> str:
+    """Choose the CachyOS repository architecture used for the kernel stage."""
+    from .config import KERNEL_PROFILES
 
-    if not hw.v3:
-        return False
-    if not Confirm.ask("This CPU supports x86-64-v3. Install the optimized v3 kernel?", default=False):
-        return False
-    console.print(
-        Panel(
-            "The v3 kernel will NOT boot on CPUs lacking x86-64-v3\n"
-            "(AVX2, BMI1/2, FMA, MOVBE, LZCNT, F16C, ...).\n"
-            "If this disk is ever moved to an older machine, it will not start.",
-            title="Warning",
-            border_style="red",
-        )
+    options = ["generic"]
+    if hw.v3:
+        options.append("v3")
+    if hw.cpu_vendor == "amd":
+        options.append("znver4")
+
+    console.print("Kernel optimization profiles:")
+    console.print("  generic — boots on supported x86-64 systems")
+    if "v3" in options:
+        console.print("  v3      — requires x86-64-v3 (AVX2 and related features)")
+    if "znver4" in options:
+        console.print("  znver4  — requires an AMD Zen 4 or Zen 5 CPU")
+    profile = Prompt.ask(
+        "CachyOS package profile",
+        choices=options,
+        default="generic",
     )
-    time.sleep(8)
-    return Confirm.ask("Are you sure you want the v3 kernel?", default=False)
+    if profile == "znver4" and not Confirm.ask(
+        "Confirm this machine has an AMD Zen 4 or Zen 5 CPU?", default=False
+    ):
+        console.print("Using the generic profile.")
+        return "generic"
+    return profile

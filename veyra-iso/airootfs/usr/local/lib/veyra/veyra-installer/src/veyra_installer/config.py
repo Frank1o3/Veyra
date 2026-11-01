@@ -35,7 +35,7 @@ BASE_PACKAGES = [
     "bluez", "bluez-utils", "iptables", "nftables", "ufw", "ufw-extras",
 
     # 4. Shell and command-line essentials
-    "fish", "git", "nano", "curl", "wget", "rsync",
+    "fish", "git", "nano", "curl", "wget", "rsync", "libarchive",
     "zip", "unzip", "zstd", "7zip", "unrar",
     "jq", "ripgrep", "fd", "fzf", "eza", "bat", "btop", "fastfetch",
     "man-db", "man-pages", "xdg-utils", "xdg-user-dirs",
@@ -43,7 +43,7 @@ BASE_PACKAGES = [
     # 5. Audio, portals, secrets and polkit
     "pipewire", "pipewire-pulse", "pipewire-alsa", "pipewire-jack", "wireplumber",
     "xdg-desktop-portal-hyprland", "xdg-desktop-portal-gtk",
-    "gnome-keyring", "hyprpolkitagent",
+    "gnome-keyring", "polkit",
 
     # 6. Login manager, compositor and desktop shell
     "sddm", "hyprland", "hyprlock", "hypridle", "hyprshutdown", "quickshell",
@@ -155,7 +155,8 @@ KERNEL_CMDLINE = (
     "nowatchdog loglevel=6"
 )
 
-LIMINE_BASE_CONF = """timeout: 3
+LIMINE_BASE_CONF = """timeout: 5
+remember_last_entry: yes
 graphics: yes
 interface_branding: Veyra OS
 
@@ -206,6 +207,13 @@ CLEANUP_FILES = {
     "/etc/user-tmpfiles.d/veyra-cache.conf": "e %C - - - 30d\n",
 }
 
-# --- First-boot AUR installs (run once via paru, then the service deletes itself) ---
-# Verify names with `paru -Ss temurin`; plain `wallust` may exist in extra.
+# CachyOS optimized package repository profiles. Zen4 packages are for AMD
+# Zen 4/5 CPUs only; x86-64-v3 is a separate, broader CPU feature profile.
+KERNEL_PROFILES = {
+    "generic": ("CachyOS generic", "linux-cachyos", ""),
+    "v3": ("CachyOS x86-64-v3", "linux-cachyos", "-v3"),
+    "znver4": ("CachyOS Zen 4/5 (znver4)", "linux-cachyos", "-znver4"),
+}
+
+# Transitional package list used by the existing first-boot AUR service.
 AUR_PACKAGES = ["wallust-git", "catppuccin-cursors-mocha", "jdk-temurin"]

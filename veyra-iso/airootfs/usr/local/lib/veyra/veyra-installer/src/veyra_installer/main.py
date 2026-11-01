@@ -23,7 +23,7 @@ from . import packages
 from . import postinstall
 from . import snapshots
 from . import system
-from .config import DEFAULT_HOSTNAME, LOG_FILE, MOUNT
+from .config import DEFAULT_HOSTNAME, KERNEL_PROFILES, LOG_FILE, MOUNT
 from .hardware import detect_hardware, swap_size_mib
 from .shell import InstallerError, is_mounted, run
 from .ui import (
@@ -31,7 +31,7 @@ from .ui import (
     ask_locale,
     ask_password,
     ask_timezone,
-    ask_v3_kernel,
+    ask_kernel_profile,
     ask_validated,
     banner,
     console,
@@ -82,10 +82,10 @@ def main() -> int:
         timezone = ask_timezone()
         xkb_layout, console_keymap = ask_keyboard()
         password = ask_password()
-        use_v3_kernel = ask_v3_kernel(hw)
+        kernel_profile = ask_kernel_profile(hw)
 
-        pkgs = packages.build_package_list(hw, use_v3_kernel)
-        packages.prepare_keys_and_mirrors(hw)
+        pkgs = packages.build_package_list(hw)
+        packages.prepare_keys_and_mirrors(hw, kernel_profile)
 
         summary = Table(title="Summary", show_header=False)
         for k, v in (
@@ -96,7 +96,7 @@ def main() -> int:
             ("Locale", locale),
             ("Timezone", timezone),
             ("Keyboard", f"{xkb_layout} (console: {console_keymap})"),
-            ("Kernel", "CachyOS v3" if use_v3_kernel else "CachyOS generic"),
+            ("Kernel", KERNEL_PROFILES[kernel_profile][0]),
             ("Packages", str(len(pkgs))),
         ):
             summary.add_row(k, v)
@@ -109,6 +109,7 @@ def main() -> int:
         mounted = True
         layout = disk.partition_and_mount(target_disk, swap_mib)
 
+        packages.install_kernel(kernel_profile, hw)
         packages.install_base(pkgs)
 
         cfg = dict(
