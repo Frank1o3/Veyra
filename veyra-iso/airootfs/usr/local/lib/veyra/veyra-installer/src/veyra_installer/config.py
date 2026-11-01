@@ -212,6 +212,7 @@ CLEANUP_FILES = {
 KERNEL_PROFILES = {
     "generic": ("CachyOS generic", "linux-cachyos", ""),
     "v3": ("CachyOS x86-64-v3", "linux-cachyos", "-v3"),
+    "v4": ("CachyOS x86-64-v4", "linux-cachyos", "-v4"),
     "znver4": ("CachyOS Zen 4/5 (znver4)", "linux-cachyos", "-znver4"),
 }
 

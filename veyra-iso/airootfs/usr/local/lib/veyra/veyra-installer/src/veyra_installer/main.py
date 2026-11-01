@@ -63,6 +63,7 @@ def main() -> int:
             f"CPU: [bold]{hw.cpu_vendor}[/]   GPUs: [bold]"
             f"{', '.join(hw.gpu_vendors) or 'none'}[/]   "
             f"x86-64-v3: [bold]{'yes' if hw.v3 else 'no'}[/]"
+            f"   x86-64-v4: [bold]{'yes' if hw.v4 else 'no'}[/]"
         )
         if "nvidia" in hw.gpu_vendors and not hw.nvidia_open:
             console.print("[yellow]Pre-Turing NVIDIA GPU found; leaving it on the nouveau driver.[/]")
@@ -84,7 +85,7 @@ def main() -> int:
         password = ask_password()
         kernel_profile = ask_kernel_profile(hw)
 
-        pkgs = packages.build_package_list(hw)
+        pkgs = packages.build_package_list(hw, kernel_profile)
         packages.prepare_keys_and_mirrors(hw, kernel_profile)
 
         summary = Table(title="Summary", show_header=False)

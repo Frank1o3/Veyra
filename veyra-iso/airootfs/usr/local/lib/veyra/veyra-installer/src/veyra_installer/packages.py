@@ -9,10 +9,15 @@ from .shell import InstallerError, run
 from .ui import console, step
 
 
-def build_package_list(hw: Hardware) -> list[str]:
+def build_package_list(hw: Hardware, profile: str) -> list[str]:
     """Packages for the online stage; kernels are installed in the cache stage."""
     packages = [p for p in BASE_PACKAGES + hw.extra_packages
                 if not p.startswith("linux-cachyos")]
+    if profile in {"v3", "v4", "znver4"}:
+        packages.append(
+            "cachyos-v3-mirrorlist" if profile == "v3"
+            else "cachyos-v4-mirrorlist"
+        )
     return list(dict.fromkeys(packages))
 
 
@@ -43,20 +48,26 @@ def prepare_keys_and_mirrors(hw: Hardware, profile: str) -> None:
     if profile not in KERNEL_PROFILES:
         raise ValueError(f"Unknown CachyOS package profile: {profile}")
     _, _, repo_suffix = KERNEL_PROFILES[profile]
+    if repo_suffix:
+        mirrorlist_package = (
+            "cachyos-v3-mirrorlist" if repo_suffix == "-v3"
+            else "cachyos-v4-mirrorlist"
+        )
+        run(["pacman", "-S", "--needed", "--noconfirm", mirrorlist_package])
     conf = Path("/etc/pacman.conf")
     text = conf.read_text()
     # Keep the standard CachyOS repository, and add the optimized repo set.
     # Their order makes optimized builds win when package names overlap.
     optimized = ""
     if repo_suffix:
-        mirrorlist = (
+        mirrorlist_file = (
             "cachyos-v3-mirrorlist" if repo_suffix == "-v3"
             else "cachyos-v4-mirrorlist"
         )
         for repo in ("cachyos" + repo_suffix,
                      "cachyos-core" + repo_suffix,
                      "cachyos-extra" + repo_suffix):
-            optimized += f"[{repo}]\nInclude = /etc/pacman.d/{mirrorlist}\n\n"
+            optimized += f"[{repo}]\nInclude = /etc/pacman.d/{mirrorlist_file}\n\n"
     text = text.replace("[cachyos]\n", optimized + "[cachyos]\n", 1)
     conf.write_text(text)
     console.print(f"Using {KERNEL_PROFILES[profile][0]} package repositories.")

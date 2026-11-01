@@ -115,6 +115,8 @@ def ask_kernel_profile(hw: Hardware) -> str:
     options = ["generic"]
     if hw.v3:
         options.append("v3")
+    if hw.v4:
+        options.append("v4")
     if hw.cpu_vendor == "amd":
         options.append("znver4")
 
@@ -122,6 +124,8 @@ def ask_kernel_profile(hw: Hardware) -> str:
     console.print("  generic — boots on supported x86-64 systems")
     if "v3" in options:
         console.print("  v3      — requires x86-64-v3 (AVX2 and related features)")
+    if "v4" in options:
+        console.print("  v4      — requires x86-64-v4, including AVX-512")
     if "znver4" in options:
         console.print("  znver4  — requires an AMD Zen 4 or Zen 5 CPU")
     profile = Prompt.ask(
@@ -131,6 +135,12 @@ def ask_kernel_profile(hw: Hardware) -> str:
     )
     if profile == "znver4" and not Confirm.ask(
         "Confirm this machine has an AMD Zen 4 or Zen 5 CPU?", default=False
+    ):
+        console.print("Using the generic profile.")
+        return "generic"
+    if profile == "v4" and hw.cpu_vendor == "intel" and not Confirm.ask(
+        "Some Intel hybrid CPUs report v4 but cannot safely run AVX-512. "
+        "Confirm this Intel CPU can run AVX-512 on all active cores?", default=False
     ):
         console.print("Using the generic profile.")
         return "generic"

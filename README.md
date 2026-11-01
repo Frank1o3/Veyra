@@ -30,11 +30,16 @@ before requiring the exact word `ERASE`.
 
 The installer creates a GPT disk with a 1 GiB EFI System Partition and a Btrfs
 root partition. It creates `@`, `@home`, `@cache`, `@var_log`, and `@tmp`
-subvolumes, with Snapper snapshots nested under `@`. The ISO build stages
-generic, x86-64-v3, and Zen 4/5 (`znver4`) CachyOS kernel archives in a
-preserved cache. The installer installs the selected profile's kernels and
-their cached dependencies first, then installs the remaining package set
-over the network. The live ISO itself continues to boot the generic kernel.
+subvolumes, with Snapper snapshots nested under `@`. The ISO build uses the
+generic CachyOS repository and kernel for the live environment, so it can boot
+across supported x86-64 CPUs. It stages generic, x86-64-v3, x86-64-v4, and Zen
+4/5 (`znver4`) CachyOS kernel archives and their dependencies in separate
+preserved caches. The installer installs the selected profile's cached kernels
+first, then installs the remaining package set over the network from that
+profile's repositories. The v4 and znver4 repositories use the CachyOS v4
+mirrorlist, with znver4 using its own repo names. The installer offers v4 only
+when glibc reports it supported and asks Intel users to confirm AVX-512 works
+on all active cores.
 It configures systemd as the init and service manager, and
 uses Limine for UEFI boot. It enables NetworkManager and SDDM, installs the
 Hyprland/Quickshell desktop packages, and creates the user in the `wheel` group

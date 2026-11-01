@@ -16,6 +16,7 @@ class Hardware:
     extra_packages: list[str] = field(default_factory=list)
     nvidia_open: bool = False
     v3: bool = False
+    v4: bool = False
 
 
 def cpu_flags() -> set[str]:
@@ -25,19 +26,28 @@ def cpu_flags() -> set[str]:
     return set()
 
 
-def supports_v3() -> bool:
+def supported_x86_64_levels() -> set[str]:
+    """Return x86-64 ISA levels glibc reports as safe on this CPU."""
     # Preferred: ask glibc's loader. Fallback: check flags with the names
     # /proc/cpuinfo really uses (abm = lzcnt, pni = sse3).
     for loader in ("/lib64/ld-linux-x86-64.so.2", "/lib/ld-linux-x86-64.so.2"):
         if Path(loader).exists():
             out = capture([loader, "--help"])
             if out:
-                return "x86-64-v3 (supported, searched)" in out
-    return set(V3_FLAGS) <= cpu_flags()
+                return {
+                    level
+                    for level in ("v2", "v3", "v4")
+                    if f"x86-64-{level} (supported, searched)" in out
+                }
+    # The loader output is unavailable: retain the existing v3 flag fallback.
+    # v4 has no fallback because confirming the full AVX-512 feature set is
+    # safer through glibc's own ISA-level check.
+    return {"v3"} if set(V3_FLAGS) <= cpu_flags() else set()
 
 
 def detect_hardware() -> Hardware:
-    hw = Hardware(v3=supports_v3())
+    isa_levels = supported_x86_64_levels()
+    hw = Hardware(v3="v3" in isa_levels, v4="v4" in isa_levels)
 
     cpuinfo = Path("/proc/cpuinfo").read_text()
     if "GenuineIntel" in cpuinfo:

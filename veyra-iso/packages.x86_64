@@ -3,8 +3,6 @@ base
 libarchive
 btrfs-progs
 cachyos-mirrorlist
-cachyos-v3-mirrorlist
-cachyos-v4-mirrorlist
 cachyos-keyring
 dosfstools
 gptfdisk
