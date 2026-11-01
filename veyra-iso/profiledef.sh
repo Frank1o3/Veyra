@@ -23,4 +23,6 @@ file_permissions=(
   ["/usr/local/bin/rivet"]="0:0:755"
   ["/etc/pacman.conf"]="0:0:644"
   ["/root/.zlogin"]="0:0:644"
+  ["/etc/vconsole.conf"]="0:0:644"
+  ["/etc/kernel/cmdline"]="0:0:644"
 )

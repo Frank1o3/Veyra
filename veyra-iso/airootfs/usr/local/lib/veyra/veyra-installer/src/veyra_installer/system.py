@@ -1,6 +1,7 @@
 """Base system configuration inside the chroot: fstab, locale, users, dotfiles, services."""
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
@@ -87,16 +88,27 @@ def configure_system(cfg: dict) -> None:
 def install_dotfiles(cfg: dict) -> None:
     step("Desktop configuration")
     user = cfg["username"]
-    source = Path("/usr/share/veyra/dotfiles")
+    source = Path(os.environ.get("VEYRA_DOTFILES_SOURCE", "/usr/share/veyra/dotfiles"))
     if not (source / "setup.sh").is_file():
-        raise InstallerError(
-            "The ISO does not contain its dotfiles snapshot. Rebuild it with build.sh."
-        )
-    staged = f"{MOUNT}/tmp/veyra-dotfiles"
+        for parent in Path(__file__).resolve().parents:
+            candidate = parent / "dotfiles"
+            if (candidate / "setup.sh").is_file():
+                source = candidate
+                break
+            candidate_sibling = parent.parent / "dotfiles"
+            if (candidate_sibling / "setup.sh").is_file():
+                source = candidate_sibling
+                break
+        else:
+            raise InstallerError(
+                "The ISO does not contain its dotfiles snapshot. Rebuild it with build.sh."
+            )
+    staged = f"{MOUNT}/var/tmp/veyra-dotfiles"
     run(["rm", "-rf", staged])
     run(["cp", "-a", str(source), staged])
+    run(["chmod", "+x", f"{staged}/setup.sh"])
     try:
-        chroot("/tmp/veyra-dotfiles/setup.sh", "--config-only", "--user", user)
+        chroot("/var/tmp/veyra-dotfiles/setup.sh", "--config-only", "--user", user)
     finally:
         run(["rm", "-rf", staged], check=False)
     branding.install_fastfetch_config(cfg["username"])

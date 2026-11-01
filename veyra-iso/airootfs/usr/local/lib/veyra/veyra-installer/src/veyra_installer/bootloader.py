@@ -24,6 +24,7 @@ def install_bootloader(disk: str, layout: Layout) -> None:
     step("Bootloader (Limine)")
     cmdline = KERNEL_CMDLINE.format(root_uuid=layout.root_uuid, swap_uuid=layout.swap_uuid)
 
+    put("/etc/kernel/cmdline", f"{cmdline}\n")
     put("/etc/default/limine", LIMINE_DEFAULT.format(cmdline=cmdline))
 
     boot = Path(MOUNT) / "boot"
