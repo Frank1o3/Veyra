@@ -2,11 +2,9 @@
 from __future__ import annotations
 
 import re
-import shlex
 from pathlib import Path
 
 from .config import (
-    DOTFILES_URL,
     MOUNT,
     SERVICES_ENABLE,
     SERVICES_GLOBAL,
@@ -14,7 +12,7 @@ from .config import (
     SUPPLEMENTARY_GROUPS
 )
 from . import branding
-from .shell import capture, chroot, put, run, target
+from .shell import InstallerError, capture, chroot, put, run, target
 from .ui import step
 
 
@@ -82,13 +80,19 @@ def configure_system(cfg: dict) -> None:
 
 def install_dotfiles(cfg: dict) -> None:
     step("Desktop configuration")
-    user = shlex.quote(cfg["username"])
-    chroot(
-        "bash", "-c",
-        f"git clone --depth 1 {DOTFILES_URL} /tmp/dotfiles && "
-        f"/tmp/dotfiles/setup.sh --config-only --user {user}; "
-        "rm -rf /tmp/dotfiles",
-    )
+    user = cfg["username"]
+    source = Path("/usr/share/veyra/dotfiles")
+    if not (source / "setup.sh").is_file():
+        raise InstallerError(
+            "The ISO does not contain its dotfiles snapshot. Rebuild it with build.sh."
+        )
+    staged = f"{MOUNT}/tmp/veyra-dotfiles"
+    run(["rm", "-rf", staged])
+    run(["cp", "-a", str(source), staged])
+    try:
+        chroot("/tmp/veyra-dotfiles/setup.sh", "--config-only", "--user", user)
+    finally:
+        run(["rm", "-rf", staged], check=False)
     branding.install_fastfetch_config(cfg["username"])
     chroot("chown", "-R", f"{user}:{user}", f"/home/{cfg['username']}/.config/fastfetch")
 

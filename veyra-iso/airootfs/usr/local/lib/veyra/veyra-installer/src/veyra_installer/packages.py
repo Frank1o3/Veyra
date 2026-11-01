@@ -9,10 +9,20 @@ from .shell import InstallerError, run
 from .ui import console, step
 
 
+KERNEL_CACHE_PACKAGES = {
+    "linux-firmware", "intel-ucode", "amd-ucode", "mesa", "vulkan-intel",
+    "intel-media-driver", "vulkan-radeon", "libva-mesa-driver", "dkms",
+    "nvidia-open-dkms", "nvidia-580xx-dkms", "nvidia-utils",
+    "lib32-nvidia-utils", "nvidia-580xx-utils", "lib32-nvidia-580xx-utils",
+    "vulkan-icd-loader", "lib32-vulkan-icd-loader",
+    "linux-cachyos", "linux-cachyos-lts", "linux-cachyos-headers",
+}
+
+
 def build_package_list(hw: Hardware, profile: str) -> list[str]:
-    """Packages for the online stage; kernels are installed in the cache stage."""
+    """Packages outside the separately cached kernel and hardware stack."""
     packages = [p for p in BASE_PACKAGES + hw.extra_packages
-                if not p.startswith("linux-cachyos")]
+                if p not in KERNEL_CACHE_PACKAGES]
     if profile in {"v3", "v4", "znver4"}:
         packages.append(
             "cachyos-v3-mirrorlist" if profile == "v3"
@@ -21,7 +31,7 @@ def build_package_list(hw: Hardware, profile: str) -> list[str]:
     return list(dict.fromkeys(packages))
 
 
-def prepare_keys_and_mirrors(hw: Hardware, profile: str) -> None:
+def prepare_keys_and_mirrors(hw: Hardware, profile: str, offline: bool = False) -> None:
     step("Package keys and mirrors")
     run("systemctl start pacman-init.service", check=False, log=False)
     if not (
@@ -31,24 +41,19 @@ def prepare_keys_and_mirrors(hw: Hardware, profile: str) -> None:
         run("pacman-key --init")
     run("pacman-key --populate archlinux cachyos")
 
-    mirrorlist = Path("/etc/pacman.d/mirrorlist")
-    backup = Path("/etc/pacman.d/mirrorlist.bak")
-    backup.write_bytes(mirrorlist.read_bytes())
-    console.print("Ranking Arch mirrors (this can take a minute)...")
-    rc = run(
-        [
-            "cachyos-rate-mirrors"
-        ],
-        check=False,
-    )
-    if rc != 0:
-        console.print("[yellow]Mirror ranking failed; keeping the default mirrorlist.[/]")
-        mirrorlist.write_bytes(backup.read_bytes())
-
     if profile not in KERNEL_PROFILES:
         raise ValueError(f"Unknown CachyOS package profile: {profile}")
     _, _, repo_suffix = KERNEL_PROFILES[profile]
-    if repo_suffix:
+    if not offline:
+        mirrorlist = Path("/etc/pacman.d/mirrorlist")
+        backup = Path("/etc/pacman.d/mirrorlist.bak")
+        backup.write_bytes(mirrorlist.read_bytes())
+        console.print("Ranking Arch mirrors (this can take a minute)...")
+        rc = run(["cachyos-rate-mirrors"], check=False)
+        if rc != 0:
+            console.print("[yellow]Mirror ranking failed; keeping the default mirrorlist.[/]")
+            mirrorlist.write_bytes(backup.read_bytes())
+    if repo_suffix and not offline:
         mirrorlist_package = (
             "cachyos-v3-mirrorlist" if repo_suffix == "-v3"
             else "cachyos-v4-mirrorlist"
@@ -71,29 +76,68 @@ def prepare_keys_and_mirrors(hw: Hardware, profile: str) -> None:
     text = text.replace("[cachyos]\n", optimized + "[cachyos]\n", 1)
     conf.write_text(text)
     console.print(f"Using {KERNEL_PROFILES[profile][0]} package repositories.")
-    run("pacman -Syy --noconfirm")
+    if offline:
+        console.print("Using package databases and archives from the ISO snapshot.")
+    else:
+        run("pacman -Syy --noconfirm")
 
 
-def install_kernel(profile: str, hw: Hardware) -> None:
-    """Install cached kernel archives before pacstrap's online package stage."""
-    step("Installing the selected kernel from the ISO cache")
+def _cache_repo_name(profile: str) -> str:
+    return {"generic": "veyra-kernel", "v3": "veyra-kernel-v3",
+            "v4": "veyra-kernel-v4", "znver4": "veyra-kernel-znver4"}[profile]
+
+
+def cached_package_archives(cache: Path) -> list[Path]:
+    """Return cached package archives in stable order for inspection/tools."""
+    return sorted(cache.glob("*.pkg.tar.zst"))
+
+
+def _offline_pacman_config(profile: str) -> Path:
+    validate_offline_cache(profile)
+    root = Path("/usr/share/veyra")
+    kernel_repo = root / "kernel-cache" / profile
+    package_repo = root / "package-cache"
+    kernel_name = _cache_repo_name(profile)
+    config = Path("/tmp/veyra-offline-pacman.conf")
+    config.write_text(
+        "[options]\nArchitecture = auto\nSigLevel = Required DatabaseOptional\n"
+        "LocalFileSigLevel = Optional\n\n"
+        f"[{kernel_name}]\nServer = file://{kernel_repo}\n\n"
+        f"[veyra-packages]\nServer = file://{package_repo}\n"
+    )
+    return config
+
+
+def validate_offline_cache(profile: str) -> None:
     if profile not in KERNEL_PROFILES:
         raise InstallerError(f"Unknown CachyOS package profile: {profile}")
-    cache = Path("/usr/share/veyra/kernel-cache") / profile
-    archives = sorted(cache.glob("*.pkg.tar.zst"))
-    if not archives:
-        raise InstallerError(
-            f"The ISO has no cached kernel packages for {profile}. "
-            "Rebuild it with build.sh so the kernel cache is staged."
-        )
-    # The archives include the selected kernels and their dependency closure;
-    # -U installs them as local package files without fetching kernel payloads.
-    run([
-        "pacstrap", "-C", "/etc/pacman.conf", "-U", "-P", MOUNT,
-        *(str(archive) for archive in archives),
-    ])
+    root = Path("/usr/share/veyra")
+    kernel_repo = root / "kernel-cache" / profile
+    package_repo = root / "package-cache"
+    kernel_name = _cache_repo_name(profile)
+    for directory, repo in ((kernel_repo, kernel_name),
+                            (package_repo, "veyra-packages")):
+        if not (directory / f"{repo}.db.tar.gz").is_file():
+            raise InstallerError(
+                f"The ISO is missing the {repo} offline package database. "
+                "Rebuild it with build.sh to create complete package caches."
+            )
+        if not (directory / f"{repo}.files.tar.gz").is_file():
+            raise InstallerError(
+                f"The ISO is missing the {repo} file-list database (.files). "
+                "Rebuild it with build.sh to create complete package caches."
+            )
 
 
-def install_base(packages: list[str]) -> None:
-    step("Installing remaining packages from the network (this takes a while)")
-    run(["pacstrap", MOUNT, *packages])
+def install_system(packages: list[str], profile: str, hw: Hardware, offline: bool) -> None:
+    """Install the full system from network repos or the ISO's frozen snapshot."""
+    step("Installing the system from the ISO snapshot" if offline else
+         "Installing the system packages from the network")
+    kernel_packages = ["linux-cachyos", "linux-cachyos-lts", "linux-firmware"]
+    kernel_packages += [p for p in hw.extra_packages if p in KERNEL_CACHE_PACKAGES]
+    targets = list(dict.fromkeys(kernel_packages + packages))
+    if offline:
+        config = _offline_pacman_config(profile)
+        run(["pacstrap", "-C", str(config), "-P", MOUNT, *targets])
+    else:
+        run(["pacstrap", "-C", "/etc/pacman.conf", "-P", MOUNT, *targets])

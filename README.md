@@ -47,9 +47,12 @@ subvolumes, with Snapper snapshots nested under `@`. The ISO build uses the
 generic CachyOS repository and kernel for the live environment, so it can boot
 across supported x86-64 CPUs. It stages generic, x86-64-v3, x86-64-v4, and Zen
 4/5 (`znver4`) CachyOS kernel archives and their dependencies in separate
-preserved caches. The installer installs the selected profile's cached kernels
-first, then installs the remaining package set over the network from that
-profile's repositories. The v4 and znver4 repositories use the CachyOS v4
+preserved caches. Each kernel cache also carries firmware, Intel/AMD CPU
+microcode, Mesa/Vulkan graphics drivers, NVIDIA open and proprietary driver
+packages, and their dependencies. A distinct system package cache contains the
+installer's remaining packages and their dependency archives. Both cache types
+include local pacman repository databases and `.files` indexes for the ISO's
+package snapshot. The v4 and znver4 repositories use the CachyOS v4
 mirrorlist, with znver4 using its own repo names. The installer offers v4 only
 when glibc reports it supported and asks Intel users to confirm AVX-512 works
 on all active cores.
@@ -62,18 +65,22 @@ previously selected kernel or snapshot for the next boot.
 The installer offers the Zen 4/5 repository only on AMD systems and asks for
 confirmation; it must only be selected for an AMD Zen 4 or Zen 5 CPU. The
 x86-64-v3 profile is offered when the live system reports v3 support. CPU
-microcode is selected from the detected vendor. `linux-firmware` is the
-firmware metapackage; it pulls in the vendor-split firmware packages, including
-AMD Radeon and Intel device firmware as dependencies. Intel and AMD graphics
-receive Mesa/Vulkan userspace packages. Turing and newer NVIDIA PCI device IDs
-add the open kernel-module driver packages and CachyOS kernel headers. Older
-NVIDIA hardware is left on the kernel's nouveau driver; install an appropriate
-legacy driver manually if needed.
+microcode is selected from the detected vendor. `linux-firmware` pulls in the
+vendor-split firmware packages, including AMD Radeon and Intel device firmware.
+Intel and AMD graphics receive Mesa/Vulkan userspace packages. NVIDIA models
+identified as RTX 3050 or newer use the open NVIDIA kernel module. Older RTX
+models and supported GTX 900/750/16-series models use CachyOS's proprietary 580
+driver package. Unidentified or unsupported older NVIDIA models remain on
+Nouveau. Driver support depends on the exact GPU family supported by the
+bundled 580 branch.
 
-The installer requires a network connection because packages are downloaded
-during installation. Connect Ethernet or configure Wi-Fi from another TTY
-before continuing. The selected disk is erased; back up any data you need.
-Installer output is shown live and appended to `/tmp/veyra-install.log`.
+With a network connection, package installation uses the configured live
+repositories. Without one, choose the ISO-cache option and the installer uses
+the selected kernel/driver cache and complete system package snapshot locally.
+Offline installs reproduce the ISO's package versions; update package databases
+and packages after boot when networking is available. The selected disk is
+erased; back up any data you need. Installer output is shown live and appended
+to `/tmp/veyra-install.log`.
 The ISO and installed package set explicitly include `libarchive`, which
 provides `bsdtar` for package builds.
 
@@ -83,9 +90,10 @@ the Arch logo from the base system.
 
 ## Desktop configuration
 
-The installer installs the Hyprland, Quickshell, Kitty, Fish, Wallust, SDDM theme,
-and wallpaper configuration directly from the [dotfiles repository](https://github.com/Frank1o3/dotfiles)
-using `setup.sh --config-only`. This includes the animated notification toasts,
+The build bundles the adjacent dotfiles checkout (override with
+`DOTFILES_SOURCE`) into the ISO, excluding Neovim. The installer applies the
+snapshot with `setup.sh --config-only`, so desktop configuration does not need
+network access. This includes the animated notification toasts,
 wallpaper picker, power menu and cheatsheet; the Settings page in Control Center;
 and the Quickshell Polkit authentication dialog. The installer copies these into
 the new user's home and enables SDDM. Polkit is installed as the system
@@ -99,5 +107,5 @@ regenerate the color palette.
 - `build.sh` builds the ISO with Archiso.
 - `veyra-iso/` contains the Archiso profile and live-root shell scripts.
 - `veyra-iso/airootfs/usr/local/bin/veyra-installer.py` is the guided installer.
-- `veyra-iso/airootfs/usr/local/lib/veyra/hardware.sh` detects hardware and
-  selects installed-system packages.
+- `veyra-iso/airootfs/usr/local/lib/veyra/veyra-installer/src/veyra_installer/hardware.py`
+  detects hardware and selects installed-system packages.

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -15,6 +16,8 @@ class Hardware:
     gpu_vendors: list[str] = field(default_factory=list)
     extra_packages: list[str] = field(default_factory=list)
     nvidia_open: bool = False
+    nvidia_proprietary: bool = False
+    nvidia_model: str = "unknown"
     v3: bool = False
     v4: bool = False
 
@@ -71,12 +74,20 @@ def detect_hardware() -> Hardware:
             gpu = "amd"
         elif vendor == "0x10de":
             gpu = "nvidia"
-            # Open kernel modules need Turing (device IDs 0x1e00+).
-            try:
-                if int(device_id, 16) >= 0x1E00:
-                    hw.nvidia_open = True
-            except ValueError:
-                pass
+            # Match the requested RTX 3050 cutoff from the model name. PCI
+            # device IDs are not monotonically ordered by product generation.
+            label = capture(["lspci", "-s", dev.name]).strip()
+            match = re.search(r"\b(RTX|GTX)\s*(\d{3,4})\b", label, re.IGNORECASE)
+            if match:
+                family, model = match.group(1).upper(), int(match.group(2))
+                hw.nvidia_model = f"{family} {model}"
+                if family == "RTX":
+                    hw.nvidia_open |= model >= 3050
+                    hw.nvidia_proprietary |= model < 3050
+                elif model >= 900 or model == 750:
+                    # The bundled proprietary 580 branch supports Maxwell and
+                    # newer consumer cards. Kepler and older stay on Nouveau.
+                    hw.nvidia_proprietary = True
         else:
             gpu = "other"
         if gpu not in hw.gpu_vendors:
@@ -94,6 +105,17 @@ def detect_hardware() -> Hardware:
             "nvidia-utils",
             "lib32-nvidia-utils",
             "vulkan-icd-loader",
+            "lib32-vulkan-icd-loader",
+        ]
+    elif "nvidia" in hw.gpu_vendors and hw.nvidia_proprietary:
+        hw.extra_packages += [
+            "dkms",
+            "linux-cachyos-headers",
+            "nvidia-580xx-dkms",
+            "nvidia-580xx-utils",
+            "lib32-nvidia-580xx-utils",
+            "vulkan-icd-loader",
+            "lib32-vulkan-icd-loader",
         ]
     hw.extra_packages = list(dict.fromkeys(hw.extra_packages))  # de-dupe, keep order
     return hw

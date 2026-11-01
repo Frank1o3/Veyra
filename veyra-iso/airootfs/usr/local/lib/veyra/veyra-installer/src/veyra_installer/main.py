@@ -56,7 +56,7 @@ def main() -> int:
         banner()
 
         step("Network")
-        network.ensure_network()
+        online = network.ensure_network()
 
         hw = detect_hardware()
         console.print(
@@ -65,8 +65,15 @@ def main() -> int:
             f"x86-64-v3: [bold]{'yes' if hw.v3 else 'no'}[/]"
             f"   x86-64-v4: [bold]{'yes' if hw.v4 else 'no'}[/]"
         )
-        if "nvidia" in hw.gpu_vendors and not hw.nvidia_open:
-            console.print("[yellow]Pre-Turing NVIDIA GPU found; leaving it on the nouveau driver.[/]")
+        if hw.nvidia_open:
+            console.print(f"NVIDIA {hw.nvidia_model}: using the open NVIDIA driver.")
+        elif hw.nvidia_proprietary:
+            console.print(f"NVIDIA {hw.nvidia_model}: using the proprietary 580 driver.")
+        elif "nvidia" in hw.gpu_vendors:
+            console.print(
+                "[yellow]NVIDIA model could not be identified; keeping Nouveau enabled. "
+                "Install a suitable driver after setup.[/]"
+            )
 
         step("Setup questions")
         target_disk = disk.pick_disk()
@@ -86,7 +93,9 @@ def main() -> int:
         kernel_profile = ask_kernel_profile(hw)
 
         pkgs = packages.build_package_list(hw, kernel_profile)
-        packages.prepare_keys_and_mirrors(hw, kernel_profile)
+        packages.prepare_keys_and_mirrors(hw, kernel_profile, offline=not online)
+        if not online:
+            packages.validate_offline_cache(kernel_profile)
 
         summary = Table(title="Summary", show_header=False)
         for k, v in (
@@ -110,8 +119,7 @@ def main() -> int:
         mounted = True
         layout = disk.partition_and_mount(target_disk, swap_mib)
 
-        packages.install_kernel(kernel_profile, hw)
-        packages.install_base(pkgs)
+        packages.install_system(pkgs, kernel_profile, hw, offline=not online)
 
         cfg = dict(
             username=username,
