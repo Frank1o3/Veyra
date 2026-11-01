@@ -16,10 +16,12 @@ command -v mkarchiso >/dev/null || {
 KERNEL_CACHE="${PROFILE_DIR}/airootfs/usr/share/veyra/kernel-cache"
 mkdir -p "$OUT_DIR" "$KERNEL_CACHE/generic" "$KERNEL_CACHE/v3" "$KERNEL_CACHE/znver4"
 
-stage_kernel_cache() {
+stage_kernel_cache() (
     local profile="$1" suffix="$2" mirrorlist="$3" config staging_root
     config="$(mktemp)"
     staging_root="$(mktemp -d)"
+    trap 'rm -f -- "$config"; sudo rm -rf -- "$staging_root"' EXIT
+    mkdir -p "${staging_root}/var/lib/pacman"
     rm -f "${KERNEL_CACHE}/${profile}"/*.pkg.tar.*
     if [[ -n "$suffix" ]]; then
         awk -v suffix="$suffix" -v mirrorlist="$mirrorlist" '
@@ -47,9 +49,7 @@ stage_kernel_cache() {
         --gpgdir /etc/pacman.d/gnupg \
         --cachedir "${KERNEL_CACHE}/${profile}" \
         -Syw --noconfirm linux-cachyos linux-cachyos-lts linux-cachyos-headers
-    rm -f "$config"
-    sudo rm -rf "$staging_root"
-}
+)
 
 stage_kernel_cache generic "" ""
 stage_kernel_cache v3 "-v3" "cachyos-v3-mirrorlist"
