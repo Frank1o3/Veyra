@@ -1,6 +1,7 @@
 target/
 out/
 veyra-iso/airootfs/usr/share/veyra/kernel-cache/
+veyra-iso/airootfs/usr/share/veyra/package-cache/
 .build/
 work/
 .venv/

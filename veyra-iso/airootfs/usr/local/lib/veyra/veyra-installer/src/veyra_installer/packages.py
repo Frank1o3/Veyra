@@ -11,7 +11,7 @@ from .ui import console, step
 
 KERNEL_CACHE_PACKAGES = {
     "linux-firmware", "intel-ucode", "amd-ucode", "mesa", "vulkan-intel",
-    "intel-media-driver", "vulkan-radeon", "libva-mesa-driver", "dkms",
+    "intel-media-driver", "vulkan-radeon", "dkms",
     "nvidia-open-dkms", "nvidia-580xx-dkms", "nvidia-utils",
     "lib32-nvidia-utils", "nvidia-580xx-utils", "lib32-nvidia-580xx-utils",
     "vulkan-icd-loader", "lib32-vulkan-icd-loader",
@@ -87,6 +87,10 @@ def _cache_repo_name(profile: str) -> str:
             "v4": "veyra-kernel-v4", "znver4": "veyra-kernel-znver4"}[profile]
 
 
+def _package_cache_repo_name(profile: str) -> str:
+    return f"veyra-packages-{profile}"
+
+
 def cached_package_archives(cache: Path) -> list[Path]:
     """Return cached package archives in stable order for inspection/tools."""
     return sorted(cache.glob("*.pkg.tar.zst"))
@@ -96,14 +100,15 @@ def _offline_pacman_config(profile: str) -> Path:
     validate_offline_cache(profile)
     root = Path("/usr/share/veyra")
     kernel_repo = root / "kernel-cache" / profile
-    package_repo = root / "package-cache"
+    package_repo = root / "package-cache" / profile
     kernel_name = _cache_repo_name(profile)
+    package_name = _package_cache_repo_name(profile)
     config = Path("/tmp/veyra-offline-pacman.conf")
     config.write_text(
         "[options]\nArchitecture = auto\nSigLevel = Required DatabaseOptional\n"
         "LocalFileSigLevel = Optional\n\n"
         f"[{kernel_name}]\nServer = file://{kernel_repo}\n\n"
-        f"[veyra-packages]\nServer = file://{package_repo}\n"
+        f"[{package_name}]\nServer = file://{package_repo}\n"
     )
     return config
 
@@ -113,10 +118,11 @@ def validate_offline_cache(profile: str) -> None:
         raise InstallerError(f"Unknown CachyOS package profile: {profile}")
     root = Path("/usr/share/veyra")
     kernel_repo = root / "kernel-cache" / profile
-    package_repo = root / "package-cache"
+    package_repo = root / "package-cache" / profile
     kernel_name = _cache_repo_name(profile)
+    package_name = _package_cache_repo_name(profile)
     for directory, repo in ((kernel_repo, kernel_name),
-                            (package_repo, "veyra-packages")):
+                            (package_repo, package_name)):
         if not (directory / f"{repo}.db.tar.gz").is_file():
             raise InstallerError(
                 f"The ISO is missing the {repo} offline package database. "

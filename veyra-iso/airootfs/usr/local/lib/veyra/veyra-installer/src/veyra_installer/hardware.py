@@ -96,7 +96,9 @@ def detect_hardware() -> Hardware:
     if "intel" in hw.gpu_vendors:
         hw.extra_packages += ["mesa", "vulkan-intel", "intel-media-driver"]
     if "amd" in hw.gpu_vendors:
-        hw.extra_packages += ["mesa", "vulkan-radeon", "libva-mesa-driver"]
+        # `mesa` provides libva-mesa-driver; don't request that virtual package
+        # separately because CachyOS and Arch expose competing providers.
+        hw.extra_packages += ["mesa", "vulkan-radeon"]
     if hw.nvidia_open:
         hw.extra_packages += [
             "dkms",

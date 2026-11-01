@@ -47,15 +47,16 @@ subvolumes, with Snapper snapshots nested under `@`. The ISO build uses the
 generic CachyOS repository and kernel for the live environment, so it can boot
 across supported x86-64 CPUs. It stages generic, x86-64-v3, x86-64-v4, and Zen
 4/5 (`znver4`) CachyOS kernel archives and their dependencies in separate
-preserved caches. Each kernel cache also carries firmware, Intel/AMD CPU
-microcode, Mesa/Vulkan graphics drivers, NVIDIA open and proprietary driver
-packages, and their dependencies. A distinct system package cache contains the
-installer's remaining packages and their dependency archives. Both cache types
-include local pacman repository databases and `.files` indexes for the ISO's
-package snapshot. The v4 and znver4 repositories use the CachyOS v4
-mirrorlist, with znver4 using its own repo names. The installer offers v4 only
-when glibc reports it supported and asks Intel users to confirm AVX-512 works
-on all active cores.
+preserved caches, with a matching system package cache for each profile. Each
+kernel cache also carries firmware, Intel/AMD CPU microcode, Mesa/Vulkan graphics
+drivers, NVIDIA open and proprietary driver packages, and their dependencies.
+Each system package cache contains the installer's remaining packages and their
+dependency archives from the corresponding generic, v3, v4, or znver4
+repositories. Both cache types include local pacman repository databases and
+`.files` indexes for the ISO's package snapshot. The v4 and znver4 repositories
+use the CachyOS v4 mirrorlist, with znver4 using its own repo names. The
+installer offers v4 only when glibc reports it supported and asks Intel users
+to confirm AVX-512 works on all active cores.
 It configures systemd as the init and service manager, and
 uses Limine for UEFI boot. It enables NetworkManager and SDDM, installs the
 Hyprland/Quickshell desktop packages, and creates the user in the `wheel` group

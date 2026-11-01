@@ -37,13 +37,21 @@ trap 'rm -rf -- "$DOTFILES_STAGE"' EXIT
 rsync -a --delete --exclude=.git --exclude=nvim "$DOTFILES_SOURCE/" "$DOTFILES_STAGE/"
 
 stage_cache() (
-    local cache_dir="$1" label="$2" repo_suffix="$3" mirrorlist="$4" config staging_root
+    local cache_dir="$1" label="$2" repo_suffix="$3" mirrorlist="$4" config staging_root stamp
+    shift 4
     config="$(mktemp)"
     staging_root="$(mktemp -d)"
+    stamp="${cache_dir}/.veyra-cache-complete"
     trap 'rm -f -- "$config"; sudo rm -rf -- "$staging_root"' EXIT
     mkdir -p "${staging_root}/var/lib/pacman"
     mkdir -p "$cache_dir"
-    sudo rm -f "$cache_dir"/*.pkg.tar.* "$cache_dir"/*.db* "$cache_dir"/*.files*
+    # A completed cache is a frozen snapshot, so refresh its archives. If an
+    # earlier build stopped before repo-add finished, keep pacman's downloads
+    # and let the retry reuse them.
+    if [[ -f "$stamp" || -f "$cache_dir/veyra-${label}.db.tar.gz" ]]; then
+        sudo rm -f "$cache_dir"/*.pkg.tar.* "$stamp"
+    fi
+    sudo rm -f "$cache_dir"/*.db* "$cache_dir"/*.files*
     if [[ -n "$repo_suffix" ]]; then
         awk -v suffix="$repo_suffix" -v mirrorlist="$mirrorlist" '
             /^\[cachyos\]$/ {
@@ -84,8 +92,10 @@ stage_cache() (
             --gpgdir /etc/pacman.d/gnupg --cachedir "$cache_dir" \
             -Sw --noconfirm nvidia-580xx-dkms nvidia-580xx-utils lib32-nvidia-580xx-utils
     fi
-    (cd "$cache_dir" && sudo repo-add --files "veyra-${label}.db.tar.gz" ./*.pkg.tar.zst)
+    # repo-add writes both the normal .db and the package file-list .files DB.
+    (cd "$cache_dir" && sudo repo-add "veyra-${label}.db.tar.gz" ./*.pkg.tar.zst)
     sudo chown -R "$(id -u):$(id -g)" "$cache_dir"
+    touch "$stamp"
 )
 
 # Hardware packages live beside kernels, in each kernel profile cache, so
@@ -94,7 +104,7 @@ stage_cache() (
 KERNEL_HARDWARE_PACKAGES=(
     linux-cachyos linux-cachyos-lts linux-cachyos-headers linux-firmware
     intel-ucode amd-ucode mesa vulkan-intel intel-media-driver
-    vulkan-radeon libva-mesa-driver dkms
+    vulkan-radeon dkms
     vulkan-icd-loader lib32-vulkan-icd-loader
 )
 
@@ -143,6 +153,7 @@ done
 for profile in generic v3 v4 znver4; do
     if [[ ",$KERNEL_PROFILES," != *",$profile,"* ]]; then
         sudo rm -rf -- "${KERNEL_CACHE}/${profile}"
+        sudo rm -rf -- "${PACKAGE_CACHE}/${profile}"
     fi
 done
 
@@ -151,23 +162,29 @@ for profile in "${profiles[@]}"; do
         generic)
             mkdir -p "${KERNEL_CACHE}/generic"
             stage_cache "${KERNEL_CACHE}/generic" kernel "" "" "${KERNEL_HARDWARE_PACKAGES[@]}"
+            mkdir -p "${PACKAGE_CACHE}/generic"
+            stage_cache "${PACKAGE_CACHE}/generic" packages-generic "" "" "${BASE_CACHE_PACKAGES[@]}"
             ;;
         v3)
             mkdir -p "${KERNEL_CACHE}/v3"
             stage_cache "${KERNEL_CACHE}/v3" kernel-v3 "-v3" "cachyos-v3-mirrorlist" "${KERNEL_HARDWARE_PACKAGES[@]}"
+            mkdir -p "${PACKAGE_CACHE}/v3"
+            stage_cache "${PACKAGE_CACHE}/v3" packages-v3 "-v3" "cachyos-v3-mirrorlist" "${BASE_CACHE_PACKAGES[@]}"
             ;;
         v4)
             mkdir -p "${KERNEL_CACHE}/v4"
             stage_cache "${KERNEL_CACHE}/v4" kernel-v4 "-v4" "cachyos-v4-mirrorlist" "${KERNEL_HARDWARE_PACKAGES[@]}"
+            mkdir -p "${PACKAGE_CACHE}/v4"
+            stage_cache "${PACKAGE_CACHE}/v4" packages-v4 "-v4" "cachyos-v4-mirrorlist" "${BASE_CACHE_PACKAGES[@]}"
             ;;
         znver4)
             mkdir -p "${KERNEL_CACHE}/znver4"
             stage_cache "${KERNEL_CACHE}/znver4" kernel-znver4 "-znver4" "cachyos-v4-mirrorlist" "${KERNEL_HARDWARE_PACKAGES[@]}"
+            mkdir -p "${PACKAGE_CACHE}/znver4"
+            stage_cache "${PACKAGE_CACHE}/znver4" packages-znver4 "-znver4" "cachyos-v4-mirrorlist" "${BASE_CACHE_PACKAGES[@]}"
             ;;
     esac
 done
-
-stage_cache "$PACKAGE_CACHE" packages "" "" "${BASE_CACHE_PACKAGES[@]}"
 
 cd "$REPO_DIR"
 sudo mkarchiso -r -v -o "$OUT_DIR" "$PROFILE_DIR"
