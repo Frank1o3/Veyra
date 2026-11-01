@@ -7,9 +7,10 @@ a disk, and install the base system.
 
 ## Build
 
-On an Arch Linux or CachyOS build host, install `archiso`, `git`, and the
-CachyOS repositories/package keyring required for `linux-cachyos`. The build
-stages all four kernel caches by default:
+On an Arch Linux or CachyOS build host, install `archiso`, `git`, `rate-mirrors`,
+and the CachyOS repositories/package keyring required for `linux-cachyos`. The
+build stages all four kernel caches by default and ranks Arch and CachyOS
+mirrors into the ISO using the build host's network:
 
 ```sh
 ./build.sh
@@ -75,13 +76,17 @@ driver package. Unidentified or unsupported older NVIDIA models remain on
 Nouveau. Driver support depends on the exact GPU family supported by the
 bundled 580 branch.
 
-With a network connection, package installation uses the configured live
-repositories. Without one, choose the ISO-cache option and the installer uses
-the selected kernel/driver cache and complete system package snapshot locally.
-Offline installs reproduce the ISO's package versions; update package databases
-and packages after boot when networking is available. The selected disk is
-erased; back up any data you need. Installer output is shown live and appended
-to `/tmp/veyra-install.log`.
+The installer uses the ranked mirrorlists bundled in the ISO when configuring
+the installed system. If Wi-Fi is available, it can rank mirrors again, then
+you can independently choose the ISO cache or network for kernel/drivers and
+system packages. This allows cache/cache, cache/network, network/cache, or
+network/network installs. With no network, both groups use the ISO snapshot.
+Cache/cache installs need no package database refresh; mixed or network installs
+use the ranked live repositories for package resolution. Offline installs
+reproduce the ISO's package versions; update package databases and packages
+after boot when networking is available. The selected disk is erased; back up
+any data you need. Installer output is shown live and appended to
+`/tmp/veyra-install.log`.
 The ISO and installed package set explicitly include `libarchive`, which
 provides `bsdtar` for package builds.
 

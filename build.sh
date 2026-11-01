@@ -18,6 +18,10 @@ command -v repo-add >/dev/null || {
     echo "repo-add is missing; install pacman before building the ISO." >&2
     exit 1
 }
+command -v rate-mirrors >/dev/null || {
+    echo "rate-mirrors is missing. Install the rate-mirrors package first." >&2
+    exit 1
+}
 
 # Keep cached package archives outside /var/cache/pacman/pkg: mkarchiso removes
 # that directory during cleanup. The ISO uses these as local package repos for
@@ -26,6 +30,8 @@ KERNEL_CACHE="${PROFILE_DIR}/airootfs/usr/share/veyra/kernel-cache"
 PACKAGE_CACHE="${PROFILE_DIR}/airootfs/usr/share/veyra/package-cache"
 DOTFILES_SOURCE="${DOTFILES_SOURCE:-${REPO_DIR%/*}/dotfiles}"
 DOTFILES_STAGE="${PROFILE_DIR}/airootfs/usr/share/veyra/dotfiles"
+MIRRORLIST_STAGE="${PROFILE_DIR}/airootfs/etc/pacman.d"
+RANKED_MIRRORS="$(mktemp -d)"
 mkdir -p "$OUT_DIR"
 
 if [[ ! -f "$DOTFILES_SOURCE/setup.sh" ]]; then
@@ -33,7 +39,7 @@ if [[ ! -f "$DOTFILES_SOURCE/setup.sh" ]]; then
     exit 1
 fi
 mkdir -p "$(dirname -- "$DOTFILES_STAGE")"
-trap 'rm -rf -- "$DOTFILES_STAGE"' EXIT
+trap 'rm -rf -- "$DOTFILES_STAGE" "$RANKED_MIRRORS"' EXIT
 rsync -a --delete --exclude=.git --exclude=nvim "$DOTFILES_SOURCE/" "$DOTFILES_STAGE/"
 
 stage_cache() (
@@ -185,6 +191,19 @@ for profile in "${profiles[@]}"; do
             ;;
     esac
 done
+
+# Embed mirror rankings made on the build network. rate-mirrors writes only to
+# this temporary directory, so the build never edits the host's /etc files.
+echo "Ranking Arch and CachyOS mirrors for the live ISO..."
+rate-mirrors --allow-root --save "${RANKED_MIRRORS}/mirrorlist" arch
+rate-mirrors --allow-root --save "${RANKED_MIRRORS}/cachyos-mirrorlist" cachyos
+mkdir -p "$MIRRORLIST_STAGE"
+install -m 0644 "${RANKED_MIRRORS}/mirrorlist" "${MIRRORLIST_STAGE}/mirrorlist"
+install -m 0644 "${RANKED_MIRRORS}/cachyos-mirrorlist" "${MIRRORLIST_STAGE}/cachyos-mirrorlist"
+install -m 0644 "${RANKED_MIRRORS}/cachyos-mirrorlist" "${MIRRORLIST_STAGE}/cachyos-v3-mirrorlist"
+install -m 0644 "${RANKED_MIRRORS}/cachyos-mirrorlist" "${MIRRORLIST_STAGE}/cachyos-v4-mirrorlist"
+sed -i 's|/$arch/|/$arch_v3/|g' "${MIRRORLIST_STAGE}/cachyos-v3-mirrorlist"
+sed -i 's|/$arch/|/$arch_v4/|g' "${MIRRORLIST_STAGE}/cachyos-v4-mirrorlist"
 
 cd "$REPO_DIR"
 sudo mkarchiso -r -v -o "$OUT_DIR" "$PROFILE_DIR"

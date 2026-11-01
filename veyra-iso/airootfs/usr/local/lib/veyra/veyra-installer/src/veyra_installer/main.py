@@ -32,6 +32,7 @@ from .ui import (
     ask_password,
     ask_timezone,
     ask_kernel_profile,
+    ask_package_sources,
     ask_validated,
     banner,
     console,
@@ -91,11 +92,20 @@ def main() -> int:
         xkb_layout, console_keymap = ask_keyboard()
         password = ask_password()
         kernel_profile = ask_kernel_profile(hw)
+        kernel_source, package_source = ask_package_sources(online)
 
         pkgs = packages.build_package_list(hw, kernel_profile)
-        packages.prepare_keys_and_mirrors(hw, kernel_profile, offline=not online)
-        if not online:
-            packages.validate_offline_cache(kernel_profile)
+        packages.prepare_keys_and_mirrors(
+            hw,
+            kernel_profile,
+            online=online,
+            sync_databases=(kernel_source == "network" or package_source == "network"),
+        )
+        packages.validate_offline_cache(
+            kernel_profile,
+            kernel=kernel_source == "cache",
+            packages=package_source == "cache",
+        )
 
         summary = Table(title="Summary", show_header=False)
         for k, v in (
@@ -107,6 +117,8 @@ def main() -> int:
             ("Timezone", timezone),
             ("Keyboard", f"{xkb_layout} (console: {console_keymap})"),
             ("Kernel", KERNEL_PROFILES[kernel_profile][0]),
+            ("Kernel and drivers", kernel_source),
+            ("System packages", package_source),
             ("Packages", str(len(pkgs))),
         ):
             summary.add_row(k, v)
@@ -119,7 +131,9 @@ def main() -> int:
         mounted = True
         layout = disk.partition_and_mount(target_disk, swap_mib)
 
-        packages.install_system(pkgs, kernel_profile, hw, offline=not online)
+        packages.install_system(
+            pkgs, kernel_profile, hw, kernel_source, package_source
+        )
 
         cfg = dict(
             username=username,

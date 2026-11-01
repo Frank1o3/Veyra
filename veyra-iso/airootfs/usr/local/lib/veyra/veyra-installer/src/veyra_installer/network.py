@@ -28,7 +28,7 @@ def ensure_network() -> bool:
     while not have_network():
         console.print("\n[yellow]No internet connection detected.[/]")
         choice = Prompt.ask(
-            "  [1] open network setup (nmtui)  [2] retry  [3] install from ISO cache",
+            "  [1] open network setup (nmtui)  [2] retry  [3] continue without network",
             choices=["1", "2", "3"],
             default="1",
         )
@@ -36,7 +36,10 @@ def ensure_network() -> bool:
             run("nmtui", check=False, log=False)
             time.sleep(3)
         elif choice == "3":
-            console.print("[yellow]Using the package snapshot bundled with this ISO.[/]")
+            console.print(
+                "[yellow]Continuing without network; package source choices "
+                "will use the bundled ISO caches.[/]"
+            )
             return False
     console.print("[green]Network connection OK.[/]")
     return True

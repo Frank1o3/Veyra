@@ -29,6 +29,12 @@ def configure_system(cfg: dict) -> None:
     put("/etc/fstab", fstab)
 
     run(["install", "-Dm644", "/etc/pacman.conf", f"{MOUNT}/etc/pacman.conf"])
+    arch_mirrorlist = Path("/etc/pacman.d/mirrorlist")
+    if arch_mirrorlist.is_file():
+        run([
+            "install", "-Dm644", str(arch_mirrorlist),
+            f"{MOUNT}/etc/pacman.d/mirrorlist",
+        ])
     for mirrorlist in Path("/etc/pacman.d").glob("cachyos*-mirrorlist"):
         run([
             "install", "-Dm644", str(mirrorlist),

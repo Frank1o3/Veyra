@@ -145,3 +145,25 @@ def ask_kernel_profile(hw: Hardware) -> str:
         console.print("Using the generic profile.")
         return "generic"
     return profile
+
+
+def ask_package_sources(online: bool) -> tuple[str, str]:
+    """Choose kernel/driver and system package sources independently."""
+    if not online:
+        console.print(
+            "No network is available. Kernel, driver, and system packages will "
+            "come from the ISO caches."
+        )
+        return "cache", "cache"
+
+    console.print(
+        "Network access is available for mirror ranking. Choose separately "
+        "whether each package group uses the ISO snapshot or current mirrors."
+    )
+    kernel_source = Prompt.ask(
+        "Kernel and driver packages", choices=["cache", "network"], default="network"
+    )
+    package_source = Prompt.ask(
+        "System packages", choices=["cache", "network"], default="network"
+    )
+    return kernel_source, package_source
