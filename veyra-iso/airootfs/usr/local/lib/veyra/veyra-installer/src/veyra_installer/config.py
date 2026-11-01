@@ -51,7 +51,7 @@ BASE_PACKAGES = [
     "qt5-graphicaleffects", "qt5-quickcontrols2",
     "awww", "kitty", "wl-clipboard", "grim", "slurp",
     "brightnessctl", "playerctl", "cava",
-    "nm-connection-editor", "network-manager-applet",
+    "nm-connection-editor",
 
     # 7. Fonts, icons and themes
     "noto-fonts", "ttf-jetbrains-mono-nerd", "ttf-nerd-fonts-symbols",
