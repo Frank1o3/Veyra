@@ -21,7 +21,7 @@ is_package_archive() {
 # Print metadata as tab-separated fields to avoid parsing package names,
 # versions, and architectures as shell words.
 package_metadata() {
-    pacman -Qp --print-format '%n\t%v\t%a' "$1" 2>/dev/null
+    pacman -Qp --print-format '%n|%v|%a' "$1" 2>/dev/null
 }
 
 validate_archives() {
@@ -57,7 +57,7 @@ prune_old_versions() {
         while IFS= read -r -d '' file; do
             is_package_archive "$file" || continue
             metadata="$(package_metadata "$file")" || continue
-            IFS=$'\t' read -r name version architecture <<< "$metadata"
+            IFS='|' read -r name version architecture <<< "$metadata"
             [[ -n "$name" && -n "$version" && -n "$architecture" ]] || continue
             key="$name"$'\t'"$architecture"
             previous="${latest_version[$key]-}"
@@ -70,7 +70,7 @@ prune_old_versions() {
         while IFS= read -r -d '' file; do
             is_package_archive "$file" || continue
             metadata="$(package_metadata "$file")" || continue
-            IFS=$'\t' read -r name version architecture <<< "$metadata"
+            IFS='|' read -r name version architecture <<< "$metadata"
             [[ -n "$name" && -n "$version" && -n "$architecture" ]] || continue
             key="$name"$'\t'"$architecture"
             if [[ "${latest_file[$key]-}" != "$file" ]]; then
@@ -94,7 +94,7 @@ write_manifest() {
         while IFS= read -r -d '' file; do
             is_package_archive "$file" || continue
             metadata="$(package_metadata "$file")" || continue
-            IFS=$'\t' read -r name version architecture <<< "$metadata"
+            IFS='|' read -r name version architecture <<< "$metadata"
             [[ -n "$name" && -n "$version" && -n "$architecture" ]] || continue
             checksum="$(sha256sum "$file" | cut -d ' ' -f1)"
             printf '%s\t%s\t%s\t%s\t%s\n' "$name" "$version" "$architecture" "$checksum" "$file" >> "$temp"
