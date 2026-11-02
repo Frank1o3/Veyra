@@ -58,5 +58,6 @@ runs:
         # treats restored archives as an incomplete cache and does not discard
         # them before refreshing package metadata and downloading updates.
         while IFS= read -r cache_dir; do
+          mkdir -p "$cache_dir"
           find "$cache_dir" -type f \( -name '.veyra-cache-complete' -o -name '*.db*' -o -name '*.files*' \) -delete
         done < <(printf '%s\n' "$CACHE_PATHS" | sed '/^[[:space:]]*$/d')
