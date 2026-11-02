@@ -1,0 +1,47 @@
+name: Veyra package cache check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cache-check:
+    name: Validate reusable package cache
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Veyra
+        uses: actions/checkout@v4
+
+      - name: Initialize keyring and install cache inspection tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          pacman-key --init
+          pacman-key --populate archlinux
+          pacman -Sy --noconfirm --needed pacman
+          pacman -S --noconfirm --needed coreutils findutils sed
+
+      - name: Restore, validate, and manifest package archives
+        id: package-cache
+        uses: ./.github/actions/veyra-package-cache
+        with:
+          cache-scope: arch-cachyos-x86_64-v1
+          cache-paths: |
+            veyra-iso/airootfs/usr/share/veyra/kernel-cache
+            veyra-iso/airootfs/usr/share/veyra/package-cache
+          manifest-path: .veyra-cache/package-manifest.tsv
+
+      - name: Upload package manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: veyra-package-cache-manifest
+          path: .veyra-cache/package-manifest.tsv
+          if-no-files-found: warn
+          retention-days: 14
