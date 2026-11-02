@@ -27,6 +27,10 @@ jobs:
           pacman -Sy --noconfirm --needed pacman
           pacman -S --noconfirm --needed coreutils findutils sed
 
+      - name: Test package cache helper
+        shell: bash
+        run: bash tests/test_package_cache_action.sh
+
       - name: Restore, validate, and manifest package archives
         id: package-cache
         uses: ./.github/actions/veyra-package-cache
