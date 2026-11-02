@@ -132,7 +132,7 @@ for node in tree.body:
         for target in node.targets
     ):
         packages = ast.literal_eval(node.value)
-        excluded = {"linux-firmware"}
+        excluded = {"linux-firmware", "cachyos-rate-mirrors"}
         print("\n".join(package for package in packages if package not in excluded
                            and not package.startswith("linux-cachyos")))
         break
