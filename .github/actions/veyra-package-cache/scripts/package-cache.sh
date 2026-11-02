@@ -11,6 +11,10 @@ if (("${#cache_dirs[@]}" == 0)); then
     exit 2
 fi
 
+is_package_archive() {
+    [[ "$1" == *.pkg.tar.zst || "$1" == *.pkg.tar.xz || "$1" == *.pkg.tar.gz ]]
+}
+
 validate_archives() {
     local dir file metadata
     local invalid=0
@@ -18,19 +22,12 @@ validate_archives() {
     for dir in "${cache_dirs[@]}"; do
         [[ -d "$dir" ]] || continue
         while IFS= read -r -d '' file; do
-            # Only package archives belong in the reusable cache.
-            [[ "$file" == *.pkg.tar.zst || "$file" == *.pkg.tar.xz || "$file" == *.pkg.tar.gz ]] || continue
-            if ! metadata="$(pacman -Qp --print-format '%n\t%v\t%a' "$file" 2>/dev/null)"; then
+            is_package_archive "$file" || continue
+            if ! metadata="$(pacman -Qp --print-format '%n %v %a' "$file" 2>/dev/null)" || [[ -z "$metadata" ]]; then
                 echo "Removing invalid package archive: $file" >&2
                 rm -f -- "$file"
                 invalid=1
-                continue
             fi
-            [[ -n "$metadata" ]] || {
-                echo "Removing package archive with empty metadata: $file" >&2
-                rm -f -- "$file"
-                invalid=1
-            }
         done < <(find "$dir" -type f -print0)
     done
 
@@ -40,25 +37,23 @@ validate_archives() {
 }
 
 write_manifest() {
-    local dir file metadata checksum relative
+    local dir file metadata checksum name version architecture
     mkdir -p "$(dirname "$MANIFEST_PATH")"
     local temp
     temp="$(mktemp)"
-    trap 'rm -f "$temp"' RETURN
 
     printf 'name\tversion\tarchitecture\tsha256\tarchive\n' > "$temp"
     for dir in "${cache_dirs[@]}"; do
         [[ -d "$dir" ]] || continue
         while IFS= read -r -d '' file; do
-            [[ "$file" == *.pkg.tar.zst || "$file" == *.pkg.tar.xz || "$file" == *.pkg.tar.gz ]] || continue
-            metadata="$(pacman -Qp --print-format '%n\t%v\t%a' "$file" 2>/dev/null)" || continue
+            is_package_archive "$file" || continue
+            metadata="$(pacman -Qp --print-format '%n %v %a' "$file" 2>/dev/null)" || continue
+            read -r name version architecture <<< "$metadata"
             checksum="$(sha256sum "$file" | cut -d ' ' -f1)"
-            relative="$file"
-            printf '%s\t%s\t%s\t%s\t%s\n' ${metadata//$'\t'/$'\t'} "$checksum" "$relative" >> "$temp"
+            printf '%s\t%s\t%s\t%s\t%s\n' "$name" "$version" "$architecture" "$checksum" "$file" >> "$temp"
         done < <(find "$dir" -type f -print0)
     done
 
-    # Stable ordering makes the manifest diffable and useful as a build artifact.
     { head -n 1 "$temp"; tail -n +2 "$temp" | sort -t $'\t' -k1,1 -k2,2 -k5,5; } > "$MANIFEST_PATH"
     rm -f "$temp"
     echo "Wrote package manifest: $MANIFEST_PATH"
