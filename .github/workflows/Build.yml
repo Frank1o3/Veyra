@@ -1,3 +1,11 @@
+name: Build and publish Veyra ISO beta
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
 jobs:
   build-iso:
     name: Build Veyra OS ISO
@@ -53,3 +61,13 @@ jobs:
           fi
           cp "${ISO_PATH}" "${{ github.workspace }}/VeyraOS.x86_64.iso"
           ls -l "${{ github.workspace }}/VeyraOS.x86_64.iso"
+
+      - name: Publish beta release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: beta
+          name: VeyraOS beta
+          prerelease: true
+          generate_release_notes: true
+          files: |
+            ${{ github.workspace }}/VeyraOS.x86_64.iso
