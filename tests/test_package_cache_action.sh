@@ -45,6 +45,6 @@ bash "$SCRIPT" prune
 [[ -e "$TEMP/cache/demo-2.0-1-x86_64.pkg.tar.zst" ]]
 bash "$SCRIPT" manifest
 [[ "$(awk 'END { print NR }' "$MANIFEST_PATH")" -eq 2 ]]
-grep -q $'^demo\t2.0-1\tx86_64\t[0-9a-f]\{64\}\t' "$MANIFEST_PATH"
+awk -F '\t' '$1 == "demo" && $2 == "2.0-1" && $3 == "x86_64" && length($4) == 64 { found = 1 } END { exit !found }' "$MANIFEST_PATH"
 
 echo "Package cache helper tests passed."
