@@ -12,7 +12,7 @@ cat > "$TEMP/bin/pacman" <<'MOCK_PACMAN'
 file="${!#}"
 base="${file##*/}"
 if [[ "$base" =~ ^(.+)-([0-9][0-9.]*-[0-9]+)-([^-]+)\.pkg\.tar\.zst$ ]]; then
-    printf '%s\t%s\t%s\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}"
+    printf '%s|%s|%s\\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}"
 else
     exit 1
 fi
