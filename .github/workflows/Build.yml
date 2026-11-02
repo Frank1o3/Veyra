@@ -1,11 +1,3 @@
-name: Build and publish Veyra ISO beta
-
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-
 jobs:
   build-iso:
     name: Build Veyra OS ISO
@@ -19,8 +11,6 @@ jobs:
     steps:
       - name: Checkout Veyra repo
         uses: actions/checkout@v4
-        with:
-          path: Veyra
 
       - name: Checkout dotfiles sibling
         uses: actions/checkout@v4
@@ -49,27 +39,17 @@ jobs:
         env:
           DOTFILES_SOURCE: ${{ github.workspace }}/dotfiles
         run: |
-          cd "${{ github.workspace }}/Veyra"
+          cd "${{ github.workspace }}"
           ./build.sh
 
       - name: Locate generated ISO
         shell: bash
         run: |
           set -euo pipefail
-          ISO_PATH="$(find "${{ github.workspace }}/Veyra/out" -type f -name '*.iso' | head -n 1)"
+          ISO_PATH="$(find "${{ github.workspace }}/out" -type f -name '*.iso' | head -n 1)"
           if [[ -z "${ISO_PATH}" ]]; then
-            echo "No ISO found in Veyra/out" >&2
+            echo "No ISO found in ${{ github.workspace }}/out" >&2
             exit 1
           fi
           cp "${ISO_PATH}" "${{ github.workspace }}/VeyraOS.x86_64.iso"
           ls -l "${{ github.workspace }}/VeyraOS.x86_64.iso"
-
-      - name: Publish beta release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: beta
-          name: VeyraOS beta
-          prerelease: true
-          generate_release_notes: true
-          files: |
-            ${{ github.workspace }}/VeyraOS.x86_64.iso
