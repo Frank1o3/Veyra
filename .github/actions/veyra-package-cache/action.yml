@@ -45,7 +45,7 @@ runs:
       run: |
         set -euo pipefail
         mkdir -p "$(dirname "$MANIFEST_PATH")"
-        script="${{ github.action_path }}/scripts/package-cache.sh"
+        script="${GITHUB_WORKSPACE}/.github/actions/veyra-package-cache/scripts/package-cache.sh"
         bash "$script" validate
         bash "$script" prune
         bash "$script" manifest
