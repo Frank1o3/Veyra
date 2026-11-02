@@ -1,0 +1,63 @@
+name: Veyra package archive cache
+description: Restore, validate, prune, and inventory cached Arch/CachyOS package archives.
+
+inputs:
+  cache-scope:
+    description: Stable scope separating incompatible architectures or repository families.
+    required: true
+  cache-paths:
+    description: Newline-separated paths to pacman package archive directories.
+    required: true
+  manifest-path:
+    description: Path where the validated package manifest should be written.
+    required: false
+    default: .veyra-cache/package-manifest.tsv
+
+outputs:
+  cache-hit:
+    description: Whether GitHub restored a cache with an exact key.
+    value: ${{ steps.cache.outputs.cache-hit }}
+  manifest-path:
+    description: Path to the generated package manifest.
+    value: ${{ steps.manifest.outputs.path }}
+  package-count:
+    description: Number of package archives included in the manifest.
+    value: ${{ steps.manifest.outputs.package-count }}
+
+runs:
+  using: composite
+  steps:
+    - name: Restore package archives
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.cache-paths }}
+        key: veyra-pacman-${{ inputs.cache-scope }}-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: |
+          veyra-pacman-${{ inputs.cache-scope }}-${{ runner.os }}-${{ runner.arch }}-
+
+    - name: Validate, prune, and inventory package archives
+      id: manifest
+      shell: bash
+      env:
+        CACHE_PATHS: ${{ inputs.cache-paths }}
+        MANIFEST_PATH: ${{ inputs.manifest-path }}
+      run: |
+        set -euo pipefail
+        mkdir -p "$(dirname "$MANIFEST_PATH")"
+        script="${GITHUB_WORKSPACE}/.github/actions/veyra-package-cache/scripts/package-cache.sh"
+        bash "$script" validate
+        bash "$script" prune
+        bash "$script" manifest
+        count="$(awk 'END { print (NR > 0 ? NR - 1 : 0) }' "$MANIFEST_PATH")"
+        echo "path=$MANIFEST_PATH" >> "$GITHUB_OUTPUT"
+        echo "package-count=$count" >> "$GITHUB_OUTPUT"
+
+        # build.sh already knows how to stage packages into local repositories.
+        # Remove only its generated completion markers and repo databases so it
+        # treats restored archives as an incomplete cache and does not discard
+        # them before refreshing package metadata and downloading updates.
+        while IFS= read -r cache_dir; do
+          mkdir -p "$cache_dir"
+          find "$cache_dir" -type f \( -name '.veyra-cache-complete' -o -name '*.db*' -o -name '*.files*' \) -delete
+        done < <(printf '%s\n' "$CACHE_PATHS" | sed '/^[[:space:]]*$/d')
