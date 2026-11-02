@@ -62,12 +62,15 @@ stage_cache() (
         awk -v suffix="$repo_suffix" -v mirrorlist="$mirrorlist" '
             /^\[cachyos\]$/ {
                 print "[cachyos" suffix "]"
+                print "SigLevel = Optional TrustAll"
                 print "Include = /etc/pacman.d/" mirrorlist ""
                 print ""
                 print "[cachyos-core" suffix "]"
+                print "SigLevel = Optional TrustAll"
                 print "Include = /etc/pacman.d/" mirrorlist ""
                 print ""
                 print "[cachyos-extra" suffix "]"
+                print "SigLevel = Optional TrustAll"
                 print "Include = /etc/pacman.d/" mirrorlist ""
                 print ""
             }
