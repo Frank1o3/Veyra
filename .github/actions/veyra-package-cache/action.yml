@@ -1,0 +1,47 @@
+name: Veyra package archive cache
+description: Restore and save Arch/CachyOS package archives, validate cached archives, and emit a package manifest.
+
+inputs:
+  cache-scope:
+    description: Stable scope separating incompatible architectures or repository families.
+    required: true
+  cache-paths:
+    description: Newline-separated paths to pacman package archive directories.
+    required: true
+  manifest-path:
+    description: Path where the validated package manifest should be written.
+    required: false
+    default: .veyra-cache/package-manifest.tsv
+
+outputs:
+  cache-hit:
+    description: Whether GitHub restored a cache with an exact key.
+    value: ${{ steps.cache.outputs.cache-hit }}
+  manifest-path:
+    description: Path to the generated package manifest.
+    value: ${{ steps.manifest.outputs.path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Restore package archives
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.cache-paths }}
+        key: veyra-pacman-${{ inputs.cache-scope }}-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: |
+          veyra-pacman-${{ inputs.cache-scope }}-${{ runner.os }}-${{ runner.arch }}-
+
+    - name: Validate restored archives and write manifest
+      id: manifest
+      shell: bash
+      env:
+        CACHE_PATHS: ${{ inputs.cache-paths }}
+        MANIFEST_PATH: ${{ inputs.manifest-path }}
+      run: |
+        set -euo pipefail
+        mkdir -p "$(dirname "$MANIFEST_PATH")"
+        bash "${{ github.action_path }}/scripts/package-cache.sh" validate
+        bash "${{ github.action_path }}/scripts/package-cache.sh" manifest
+        echo "path=$MANIFEST_PATH" >> "$GITHUB_OUTPUT"
