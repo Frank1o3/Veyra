@@ -23,7 +23,7 @@ BTRFS_OPTS = "noatime,compress=zstd:3,space_cache=v2"
 BASE_PACKAGES = [
     # 1. Base system, kernels, firmware, package tooling
     "base", "linux-cachyos", "linux-cachyos-lts", "linux-firmware",
-    "cachyos-keyring", "cachyos-mirrorlist", "cachyos-rate-mirrors", "pacman-contrib",
+    "cachyos-keyring", "cachyos-mirrorlist", "pacman-contrib",
 
     # 2. Filesystems, bootloader, snapshots, swap
     "btrfs-progs", "dosfstools", "ntfs-3g", "exfatprogs", "efibootmgr",
