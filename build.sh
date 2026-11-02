@@ -51,13 +51,10 @@ stage_cache() (
     trap 'rm -f -- "$config"; sudo rm -rf -- "$staging_root"' EXIT
     mkdir -p "${staging_root}/var/lib/pacman"
     mkdir -p "$cache_dir"
-    # A completed cache is a frozen snapshot, so refresh its archives. If an
-    # earlier build stopped before repo-add finished, keep pacman's downloads
-    # and let the retry reuse them.
-    if [[ -f "$stamp" || -f "$cache_dir/veyra-${label}.db.tar.gz" ]]; then
-        sudo rm -f "$cache_dir"/*.pkg.tar.* "$stamp"
-    fi
-    sudo rm -f "$cache_dir"/*.db* "$cache_dir"/*.files*
+    # Keep restored package archives between CI runs. The custom GitHub
+    # Actions cache validates and prunes superseded versions before this step;
+    # Pacman fetches newer versions as needed. Only rebuild generated repo DBs.
+    sudo rm -f "$cache_dir"/*.db* "$cache_dir"/*.files* "$stamp"
     if [[ -n "$repo_suffix" ]]; then
         awk -v suffix="$repo_suffix" -v mirrorlist="$mirrorlist" '
             /^\[cachyos\]$/ {
