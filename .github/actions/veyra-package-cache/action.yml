@@ -1,5 +1,5 @@
 name: Veyra package archive cache
-description: Restore and save Arch/CachyOS package archives, validate cached archives, and emit a package manifest.
+description: Restore, validate, prune, and inventory cached Arch/CachyOS package archives.
 
 inputs:
   cache-scope:
@@ -20,6 +20,9 @@ outputs:
   manifest-path:
     description: Path to the generated package manifest.
     value: ${{ steps.manifest.outputs.path }}
+  package-count:
+    description: Number of package archives included in the manifest.
+    value: ${{ steps.manifest.outputs.package-count }}
 
 runs:
   using: composite
@@ -33,7 +36,7 @@ runs:
         restore-keys: |
           veyra-pacman-${{ inputs.cache-scope }}-${{ runner.os }}-${{ runner.arch }}-
 
-    - name: Validate restored archives and write manifest
+    - name: Validate, prune, and inventory package archives
       id: manifest
       shell: bash
       env:
@@ -42,6 +45,10 @@ runs:
       run: |
         set -euo pipefail
         mkdir -p "$(dirname "$MANIFEST_PATH")"
-        bash "${{ github.action_path }}/scripts/package-cache.sh" validate
-        bash "${{ github.action_path }}/scripts/package-cache.sh" manifest
+        script="${{ github.action_path }}/scripts/package-cache.sh"
+        bash "$script" validate
+        bash "$script" prune
+        bash "$script" manifest
+        count="$(awk 'END { print (NR > 0 ? NR - 1 : 0) }' "$MANIFEST_PATH")"
         echo "path=$MANIFEST_PATH" >> "$GITHUB_OUTPUT"
+        echo "package-count=$count" >> "$GITHUB_OUTPUT"
