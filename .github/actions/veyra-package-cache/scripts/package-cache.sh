@@ -46,38 +46,41 @@ validate_archives() {
 # directory. This avoids repo-add publishing several versions of one package.
 # Separate profile directories remain independent (generic, v3, v4, znver4).
 prune_old_versions() {
-    local dir file metadata name version architecture key previous
+    local root dir file metadata name version architecture key previous
+    # Prune separately within each leaf directory containing package archives.
+    # This keeps generic/v3/v4/znver4 snapshots independent.
     declare -A latest_version latest_file
 
-    for dir in "${cache_dirs[@]}"; do
-        [[ -d "$dir" ]] || continue
-        latest_version=()
-        latest_file=()
+    for root in "${cache_dirs[@]}"; do
+        [[ -d "$root" ]] || continue
+        while IFS= read -r -d '' dir; do
+            latest_version=()
+            latest_file=()
+            while IFS= read -r -d '' file; do
+                is_package_archive "$file" || continue
+                metadata="$(package_metadata "$file")" || continue
+                IFS='|' read -r name version architecture <<< "$metadata"
+                [[ -n "$name" && -n "$version" && -n "$architecture" ]] || continue
+                key="$name"$'\\t'"$architecture"
+                previous="${latest_version[$key]-}"
+                if [[ -z "$previous" ]] || [[ "$(vercmp "$version" "$previous")" -gt 0 ]]; then
+                    latest_version[$key]="$version"
+                    latest_file[$key]="$file"
+                fi
+            done < <(find "$dir" -maxdepth 1 -type f -print0)
 
-        while IFS= read -r -d '' file; do
-            is_package_archive "$file" || continue
-            metadata="$(package_metadata "$file")" || continue
-            IFS='|' read -r name version architecture <<< "$metadata"
-            [[ -n "$name" && -n "$version" && -n "$architecture" ]] || continue
-            key="$name"$'\t'"$architecture"
-            previous="${latest_version[$key]-}"
-            if [[ -z "$previous" ]] || [[ "$(vercmp "$version" "$previous")" -gt 0 ]]; then
-                latest_version[$key]="$version"
-                latest_file[$key]="$file"
-            fi
-        done < <(find "$dir" -type f -print0)
-
-        while IFS= read -r -d '' file; do
-            is_package_archive "$file" || continue
-            metadata="$(package_metadata "$file")" || continue
-            IFS='|' read -r name version architecture <<< "$metadata"
-            [[ -n "$name" && -n "$version" && -n "$architecture" ]] || continue
-            key="$name"$'\t'"$architecture"
-            if [[ "${latest_file[$key]-}" != "$file" ]]; then
-                echo "Pruning superseded archive: $file" >&2
-                rm -f -- "$file"
-            fi
-        done < <(find "$dir" -type f -print0)
+            while IFS= read -r -d '' file; do
+                is_package_archive "$file" || continue
+                metadata="$(package_metadata "$file")" || continue
+                IFS='|' read -r name version architecture <<< "$metadata"
+                [[ -n "$name" && -n "$version" && -n "$architecture" ]] || continue
+                key="$name"$'\\t'"$architecture"
+                if [[ "${latest_file[$key]-}" != "$file" ]]; then
+                    echo "Pruning superseded archive: $file" >&2
+                    rm -f -- "$file"
+                fi
+            done < <(find "$dir" -maxdepth 1 -type f -print0)
+        done < <(find "$root" -type d -print0)
     done
 }
 
