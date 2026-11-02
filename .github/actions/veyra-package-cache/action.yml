@@ -52,3 +52,13 @@ runs:
         count="$(awk 'END { print (NR > 0 ? NR - 1 : 0) }' "$MANIFEST_PATH")"
         echo "path=$MANIFEST_PATH" >> "$GITHUB_OUTPUT"
         echo "package-count=$count" >> "$GITHUB_OUTPUT"
+
+        # build.sh already knows how to stage packages into local repositories.
+        # Remove only its generated completion markers and repo databases so it
+        # treats restored archives as an incomplete cache and does not discard
+        # them before refreshing package metadata and downloading updates.
+        while IFS= read -r -d '' cache_dir; do
+          find "$cache_dir" -type f \\
+            \\( -name '.veyra-cache-complete' -o -name '*.db*' -o -name '*.files*' \\) \\
+            -delete
+        done < <(printf '%s\\n' "$CACHE_PATHS" | sed '/^[[:space:]]*$/d')
