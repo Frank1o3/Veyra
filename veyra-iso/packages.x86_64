@@ -15,7 +15,6 @@ limine
 efibootmgr
 mtools
 pv
-cachyos-rate-mirrors
 python
 python-rich
 pciutils
