@@ -2,6 +2,9 @@ name: Veyra package cache check
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/github-actions-package-cache
 
 permissions:
   contents: read
