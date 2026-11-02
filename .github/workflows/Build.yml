@@ -74,6 +74,16 @@ jobs:
           set -euxo pipefail
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
 
+      - name: Restore and validate package archive cache
+        id: package-cache
+        uses: ./.github/actions/veyra-package-cache
+        with:
+          cache-scope: arch-cachyos-x86_64-${{ hashFiles('veyra-iso/packages.x86_64', 'veyra-iso/pacman.conf', 'veyra-iso/airootfs/usr/local/lib/veyra/veyra-installer/src/veyra_installer/config.py') }}
+          cache-paths: |
+            veyra-iso/airootfs/usr/share/veyra/kernel-cache
+            veyra-iso/airootfs/usr/share/veyra/package-cache
+          manifest-path: .veyra-cache/package-manifest.tsv
+
       - name: Build ISO
         shell: bash
         env:
